@@ -1,0 +1,196 @@
+
+(footprint SO20L (layer F.Cu) (tedit 6413090D)
+  (descr "<B>Small Outline Package</B> SOIC 0.300\"")
+  (attr smd)
+  (fp_text reference REF** (at -6.96211 -0.63522 900) (layer F.SilkS)
+    (effects (font (size 1.40050393701 1.40050393701) (thickness 0.15)))
+  )
+  (fp_text value SO20L (at 1.00000000005e-05 0.6617 0) (layer F.Fab)
+    (effects (font (size 1.40275590551 1.40275590551) (thickness 0.15)))
+  )
+  (pad 1 smd rect (at -5.08 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 2 smd rect (at -3.81 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 3 smd rect (at -2.54 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 4 smd rect (at -1.27 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 5 smd rect (at 0.0 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 6 smd rect (at 1.27 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 7 smd rect (at 2.54 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 8 smd rect (at 3.81 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 9 smd rect (at 5.08 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 10 smd rect (at 6.35 5.1308) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 12 smd rect (at 5.08 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 11 smd rect (at 6.35 -4.3688) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 13 smd rect (at 3.81 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 14 smd rect (at 2.54 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 15 smd rect (at 1.27 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 16 smd rect (at 0.0 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 17 smd rect (at -1.27 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 18 smd rect (at -2.54 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 19 smd rect (at -3.81 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (pad 20 smd rect (at -5.08 -4.3942) (size 0.762 1.143) (layers F.Cu F.Mask F.Paste))
+  (fp_line (start -5.639 4.064) (end 6.909 4.064) (layer F.SilkS) (width 0.1524))
+  (fp_line (start 6.909 4.064) (end 6.909 -3.277) (layer F.SilkS) (width 0.1524))
+  (fp_line (start 6.909 -3.277) (end -5.639 -3.277) (layer F.SilkS) (width 0.1524))
+  (fp_line (start -5.639 -3.277) (end -5.639 4.064) (layer F.SilkS) (width 0.1524))
+  (fp_circle (center -4.7498 3.1496) (end -4.2164 3.1496) (layer F.SilkS) (width 0.1524))
+  (fp_poly
+    (pts
+      (xy 6.15004 -4.6482)
+      (xy 6.5532 -4.6482)
+      (xy 6.5532 -3.32915)
+      (xy 6.15004 -3.32915)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 4.88228 -4.6482)
+      (xy 5.2832 -4.6482)
+      (xy 5.2832 -3.33114)
+      (xy 4.88228 -3.33114)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 3.61337 -4.6482)
+      (xy 4.0132 -4.6482)
+      (xy 4.0132 -3.33346)
+      (xy 3.61337 -3.33346)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 2.34115 -4.6482)
+      (xy 2.7432 -4.6482)
+      (xy 2.7432 -3.3336)
+      (xy 2.34115 -3.3336)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 1.06755 -4.6482)
+      (xy 1.4732 -4.6482)
+      (xy 1.4732 -3.32974)
+      (xy 1.06755 -3.32974)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -0.203349 -4.6482)
+      (xy 0.2032 -4.6482)
+      (xy 0.2032 -3.32984)
+      (xy -0.203349 -3.32984)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -1.47478 -4.6482)
+      (xy -1.0668 -4.6482)
+      (xy -1.0668 -3.33098)
+      (xy -1.47478 -3.33098)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -2.74616 -4.6482)
+      (xy -2.3368 -4.6482)
+      (xy -2.3368 -3.33099)
+      (xy -2.74616 -3.33099)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -4.015 -4.6482)
+      (xy -3.6068 -4.6482)
+      (xy -3.6068 -3.3289)
+      (xy -4.015 -3.3289)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -5.29341 -4.6482)
+      (xy -4.8768 -4.6482)
+      (xy -4.8768 -3.33383)
+      (xy -5.29341 -3.33383)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 6.15484 4.1148)
+      (xy 6.5532 4.1148)
+      (xy 6.5532 5.44271)
+      (xy 6.15484 5.44271)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 4.87738 4.1148)
+      (xy 5.2832 4.1148)
+      (xy 5.2832 5.43625)
+      (xy 4.87738 5.43625)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 3.61372 4.1148)
+      (xy 4.0132 4.1148)
+      (xy 4.0132 5.44603)
+      (xy 3.61372 5.44603)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 2.33706 4.1148)
+      (xy 2.7432 4.1148)
+      (xy 2.7432 5.43621)
+      (xy 2.33706 5.43621)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy 1.06717 4.1148)
+      (xy 1.4732 4.1148)
+      (xy 1.4732 5.43746)
+      (xy 1.06717 5.43746)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -0.203513 4.1148)
+      (xy 0.2032 4.1148)
+      (xy 0.2032 5.44399)
+      (xy -0.203513 5.44399)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -1.47587 4.1148)
+      (xy -1.0668 4.1148)
+      (xy -1.0668 5.44545)
+      (xy -1.47587 5.44545)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -2.74793 4.1148)
+      (xy -2.3368 4.1148)
+      (xy -2.3368 5.44498)
+      (xy -2.74793 5.44498)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -4.01502 4.1148)
+      (xy -3.6068 4.1148)
+      (xy -3.6068 5.43807)
+      (xy -4.01502 5.43807)
+    ) (layer F.Fab) (width 0.01)
+  )
+  (fp_poly
+    (pts
+      (xy -5.29032 4.1148)
+      (xy -4.8768 4.1148)
+      (xy -4.8768 5.44293)
+      (xy -5.29032 5.44293)
+    ) (layer F.Fab) (width 0.01)
+  )
+)

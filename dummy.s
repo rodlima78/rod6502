@@ -1,0 +1,63 @@
+START_ROM = $C800
+NMI_VEC = $FFFA
+RESET_VEC = $FFFC
+IRQ_VEC = $FFFE
+
+VIA_DIR_B = $C002
+VIA_STORE_B = $C000
+VIA_ACR = $C00D
+VIA_T1CL = $C004
+VIA_T1CH = $C005
+VIA_T1LL = $C006
+VIA_T1LH = $C007
+
+LCD_INSTR = $C300
+LCD_DATA = $C301
+IRQ_CTRL = $C100
+
+POST_STATE_ZP = 0
+POST_STATE_STACK = 1
+POST_STATE_VIA_WAIT = 2
+POST_STATE_VIA_OK = 3
+POST_STATE_RAM = 4
+POST_STATE = $0000
+
+RED_LED = 32
+GREEN_LED = 128
+PAGE_ADDR = $0001
+
+MSGBASE = $0003
+
+ .org $8000
+ .org START_ROM
+ROD .asciiz "ABC"
+
+reset:
+ lda #(ROD & $FF)
+ sta MSGBASE
+ lda #(ROD >> 8)
+ sta MSGBASE+1
+
+ ldy #0
+ lda (MSGBASE),y
+
+ iny
+ lda (MSGBASE),y
+
+ iny
+ lda (MSGBASE),y
+
+ iny
+ lda (MSGBASE),y
+
+end:
+ stp
+
+irq:
+ rti
+
+ .org RESET_VEC
+ .word reset
+ .org IRQ_VEC
+ .word irq
+
