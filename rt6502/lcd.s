@@ -1,0 +1,85 @@
+.include "lcd.inc"
+
+.code
+
+lcd_init:
+    lda #%00111000   ; set 8-bit operation, 2 lines, 5x7
+    sta LCD_INSTR
+    jsr lcd_wait
+    lda #%110     ; entry mode set: increment, do not shift
+    sta LCD_INSTR
+    jsr lcd_wait
+    lda #%1110   ; display on, cursor on, blink off
+    sta LCD_INSTR
+    jsr lcd_wait
+    lda #1        ; clear display
+    sta LCD_INSTR
+    jsr lcd_wait
+    rts
+
+lcd_wait:
+    bit LCD_INSTR
+    bmi lcd_wait ; bit 7 is one (busy)? continue waiting
+    rts
+
+lcd_clear:
+    pha
+    lda #1
+    sta LCD_INSTR
+    lsr lcd_wait
+    pla
+    rts
+
+lcd_print:
+    pha
+    sta LCD_DATA
+    jsr lcd_wait
+    lda LCD_INSTR
+    and #$7F
+    cmp #$14
+    bne lcd_print0
+    lda #$C0
+    sta LCD_INSTR
+    jsr lcd_wait
+lcd_print0:
+    pla
+    rts
+
+lcd_hex:
+    pha
+    lsr a  ; shift high nibble into low nibble
+    lsr a
+    lsr a
+    lsr a
+    tay
+    lda LCD_HEXASCII,y ; convert to ASCII
+    jsr lcd_print
+    pla
+    pha
+    and #$0F ; select low nibble
+    tay
+    lda LCD_HEXASCII,y
+    jsr lcd_print
+    pla
+    rts
+
+lcd_string:
+    pha
+    phy
+    ldy #0
+lcd_str0:
+    lda (LCD_MSGBASE), y
+    beq lcd_str1
+    jsr lcd_print
+    iny
+    bne lcd_str0
+lcd_str1:
+    ply
+    pla
+    rts
+
+.rodata
+LCD_HEXASCII: .byte "0123456789ABCDEF"
+
+.zeropage
+LCD_MSGBASE: .res 2

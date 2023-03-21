@@ -1,7 +1,6 @@
-*.o
-*.l
 \#auto_saved_files\#
 autosave-*.kicad_*
 *-backups
 fp-info-cache
 *-bak
+build

@@ -7,6 +7,7 @@ const int RAM0 = 8;
 const int RAM1 = 9;
 const int ROM = 10;
 const int VIA = 7;
+const int IRQ = 32;
 
 
 void setup() {
@@ -17,6 +18,7 @@ void setup() {
   pinMode(RAM1, INPUT);
   pinMode(ROM, INPUT);
   pinMode(VIA, INPUT);
+  pinMode(IRQ, INPUT);
   for(int i=0; i<16; ++i)
   {
     pinMode(ADDR_START+i, INPUT);
@@ -42,6 +44,7 @@ void onClock()
   int ram1 = digitalRead(RAM1) ? 1 : 0;
   int rom = digitalRead(ROM) ? 1 : 0;
   int via = digitalRead(VIA) ? 1 : 0;
+  int irq = digitalRead(IRQ) ? ' ' : 'I';
   
   int address = 0;
   for(int i=0; i<16; ++i)
@@ -56,6 +59,6 @@ void onClock()
   }
 
   char buf[512];
-  sprintf(buf, "%c %04x %c %02x ram0:%d ram1:%d rom:%d via:%d", opstart, address, rw, data,ram0,ram1,rom,via);
+  sprintf(buf, "%c %04x %c %02x %c ram0:%d ram1:%d rom:%d via:%d", opstart, address, rw, data,irq,ram0,ram1,rom,via);
   Serial.println(buf);
 }
