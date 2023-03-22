@@ -1,98 +1,70 @@
 .include "via.inc"
+.include "lcd.inc"
 
-POST_STATE_VIA_WAIT = 2
-POST_STATE_VIA_OK = 3
+.export test_via
+.export test_via_irq
 
-POST_STATE = $0000
-IRQ_CALLED = $0001
-IRQ_FAIL = $0002
+.zeropage
+TEST_STATUS: .res 1
+
+.rodata
+STR_NO_IRQ:  .asciiz "NO IRQ "
+STR_BAD_IFR:  .asciiz "BAD IFR "
+STR_MANY_IRQ:  .asciiz "MANY IRQ "
 
 .code
 
-reset:
- ; initialize stack pointer
- ldx #$ff
- txs
-
  ; Test VIA -----------------
 test_via:
- lda #POST_STATE_VIA_WAIT
- sta POST_STATE
+    lda #2 ; irq handler not called
+    sta TEST_STATUS
 
- stz IRQ_CALLED
- stz IRQ_FAIL
+    cli ; enable interrupts
 
- lda #$ff
- sta VIA_DIR_B ; set all B pins to output (for the leds)
+    lda #$C0 ; enable Timer1 interrupts
+    sta VIA_IER
 
- cli ; enable interrupts
- lda #$C0 ; enable Timer1 interrupts
- sta VIA_IER
+    lda #$C0  ; enable timer1 in one-shot mode
+    trb VIA_ACR
 
- lda #$C0  ; enable timer1 in one-shot mode
- trb VIA_ACR
- ; one-shot after 67 cycles
- lda #67
- sta VIA_T1CL
- stz VIA_T1CH
+    ; one-shot after 67 cycles
+    lda #67
+    sta VIA_T1CL
+    stz VIA_T1CH
 
- ; wait for irq to update state
- ldx #$FF
-wait_via_irq:
- lda #POST_STATE_VIA_OK
- cmp POST_STATE
- beq test_via_ok
- dex
- beq post_fail
- bra wait_via_irq
-test_via_ok:
- lda #0
- cmp IRQ_FAIL
- bne post_fail
+    ; wait for irq to update state
+    ldx #$FF
+wait_irq:
+    lda #2
+    cmp TEST_STATUS 
+    bne handler_called ; irq handler called?
+    dex
+    bne wait_irq
+    lcd_print STR_NO_IRQ
+    sei ; disable interrupts
+    lda #1 ; failure!
+    rts
+handler_called:
+    sei ; disable interrupts
+    lda TEST_STATUS
+    rts
 
-post_success:
- lda #(VIA_LED_GREEN)
- sta VIA_IO_B
+test_via_irq:
+    lda VIA_T1CL ; reset the timer interrupt
 
-end:
- stp
+    dec TEST_STATUS ; 2 -> 1
+    dec TEST_STATUS ; 1 -> 0
+    beq test_via_irq_continue ; test_status == 0 ? successs
 
-post_fail:
- lda #(VIA_LED_RED)
- sta VIA_IO_B
- bra end
+    lcd_print STR_MANY_IRQ
+    bra end_irq 
 
-irq:
- pha
- inc IRQ_CALLED
- bit #$C0 ; IRQ & Timer1
- bne irq_fail
+test_via_irq_continue:
 
- lda #1
- cmp IRQ_CALLED
- bne irq_fail ; irq_called != 1 ? fail
-
- lda #POST_STATE_VIA_WAIT
- cmp POST_STATE
- bne irq_fail ; POST_STATE != POST_STATE_VIA_WAIT ? fail
-
+    lda VIA_IFR
+    bit #$C0 ; IRQ & Timer1 ?
+    beq end_irq
+    inc TEST_STATUS ; 0 -> 1 (failure)
+    lcd_print STR_BAD_IFR
 end_irq:
- lda #POST_STATE_VIA_OK
- sta POST_STATE
-
- lda VIA_T1CL ; reset the timer interrupt
- pla
- rti
-
-irq_fail:
- lda #VIA_LED_RED
- sta VIA_IO_B
- bra end_irq
-
-nmi:
- rti
-
-.segment "VECTORS"
-.word nmi
-.word reset
-.word irq
+    rts

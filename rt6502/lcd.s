@@ -3,9 +3,19 @@
 .code
 
 lcd_init:
+    phy
+    pha
+
+    ; It's highly recommended that we call the function set 3 times
+    ; for proper power-up
     lda #%00111000   ; set 8-bit operation, 2 lines, 5x7
     sta LCD_INSTR
     jsr lcd_wait
+    sta LCD_INSTR
+    jsr lcd_wait
+    sta LCD_INSTR
+    jsr lcd_wait
+
     lda #%110     ; entry mode set: increment, do not shift
     sta LCD_INSTR
     jsr lcd_wait
@@ -15,6 +25,8 @@ lcd_init:
     lda #1        ; clear display
     sta LCD_INSTR
     jsr lcd_wait
+    pla
+    ply
     rts
 
 lcd_wait:
@@ -30,22 +42,23 @@ lcd_clear:
     pla
     rts
 
-lcd_print:
+lcd_printchar:
     pha
     sta LCD_DATA
     jsr lcd_wait
     lda LCD_INSTR
     and #$7F
     cmp #$14
-    bne lcd_print0
+    bne lcd_printchar0
     lda #$C0
     sta LCD_INSTR
     jsr lcd_wait
-lcd_print0:
+lcd_printchar0:
     pla
     rts
 
 lcd_hex:
+    phy
     pha
     lsr a  ; shift high nibble into low nibble
     lsr a
@@ -53,14 +66,15 @@ lcd_hex:
     lsr a
     tay
     lda LCD_HEXASCII,y ; convert to ASCII
-    jsr lcd_print
+    jsr lcd_printchar
     pla
     pha
     and #$0F ; select low nibble
     tay
     lda LCD_HEXASCII,y
-    jsr lcd_print
+    jsr lcd_printchar
     pla
+    ply
     rts
 
 lcd_string:
@@ -70,7 +84,7 @@ lcd_string:
 lcd_str0:
     lda (LCD_MSGBASE), y
     beq lcd_str1
-    jsr lcd_print
+    jsr lcd_printchar
     iny
     bne lcd_str0
 lcd_str1:

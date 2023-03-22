@@ -1,4 +1,5 @@
 .include "via.inc"
+.include "mem.inc"
 
 .export test_zp
 .export test_stack
@@ -23,7 +24,7 @@ PAGE_ADDR: .res 1
 loop_w_page:
     tay
     sta page,y
-    inc a
+    ina
     bne loop_w_page
 
     ; read it back
@@ -32,9 +33,9 @@ loop_r_page:
     tay
     cmp page,y
     bne fail
-    inc a
+    ina
     bne loop_r_page
-    ; A is 0 here
+    ; A is 0 here; ZF==1
     bra success
 fail:
     lda #1
@@ -53,7 +54,7 @@ test_ram:
     ; start w/ last page in RAM
     lda #0
     sta PAGE_ADDR
-    lda #(48*1024/256-1)
+    lda #<(__RAM_SIZE__/256-1)
     sta PAGE_ADDR+1
 
     ; write data
@@ -62,7 +63,7 @@ loop_new_page:
     bbr0 PAGE_ADDR+1,leds_off
     ; or else turn them on
     lda #(VIA_LED_GREEN+VIA_LED_RED)
-    jmp write_led
+    bra write_led
 leds_off:
     lda #0
 write_led:
@@ -72,7 +73,7 @@ write_led:
 loop_w_ram:
     tay
     sta (PAGE_ADDR),y
-    inc a
+    ina
     bne loop_w_ram
 
     ; read it back
@@ -81,12 +82,15 @@ loop_r_ram:
     tay
     cmp (PAGE_ADDR),y
     bne fail
-    inc a
+    ina
     bne loop_r_ram
 
     dec PAGE_ADDR+1
+    ; loop till PAGE_ADDR==1 (we don't want to corrupt the stack)
+    lda #1
+    cmp PAGE_ADDR+1
     bne loop_new_page
-    ; A is zero here
+    lda #0
     bra success
 fail:
     lda #1

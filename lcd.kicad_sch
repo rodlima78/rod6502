@@ -613,7 +613,7 @@
     (property "Footprint" "Display:HY1602E" (at 50.8 72.39 0)
       (effects (font (size 1.27 1.27) italic) hide)
     )
-    (property "Datasheet" "http://www.wincomlcd.com/pdf/WC1602A-SFYLYHTC06.pdf" (at 68.58 49.53 0)
+    (property "Datasheet" "https://www.sparkfun.com/datasheets/LCD/HD44780.pdf" (at 68.58 49.53 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid 7e1026a4-03e8-4a8d-8428-f2f4fe6fedef))
