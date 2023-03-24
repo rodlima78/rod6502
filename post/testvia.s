@@ -1,16 +1,10 @@
 .include "via.inc"
-.include "lcd.inc"
 
 .export test_via
 .export test_via_irq
 
 .zeropage
 TEST_STATUS: .res 1
-
-.rodata
-STR_NO_IRQ:  .asciiz "NO IRQ "
-STR_BAD_IFR:  .asciiz "BAD IFR "
-STR_MANY_IRQ:  .asciiz "MANY IRQ "
 
 .code
 
@@ -40,7 +34,6 @@ wait_irq:
     bne handler_called ; irq handler called?
     dex
     bne wait_irq
-    lcd_print STR_NO_IRQ
     sei ; disable interrupts
     lda #1 ; failure!
     rts
@@ -56,7 +49,6 @@ test_via_irq:
     dec TEST_STATUS ; 1 -> 0
     beq test_via_irq_continue ; test_status == 0 ? successs
 
-    lcd_print STR_MANY_IRQ
     bra end_irq 
 
 test_via_irq_continue:
@@ -65,6 +57,5 @@ test_via_irq_continue:
     bit #$C0 ; IRQ & Timer1 ?
     beq end_irq
     inc TEST_STATUS ; 0 -> 1 (failure)
-    lcd_print STR_BAD_IFR
 end_irq:
     rts

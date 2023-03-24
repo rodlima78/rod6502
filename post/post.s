@@ -1,6 +1,5 @@
 .include "via.inc"
 .include "irq.inc"
-.include "lcd.inc"
 
 POST_STAGE_ZP = 0
 POST_STAGE_STACK = 1
@@ -60,19 +59,9 @@ after_test_stack:
     jmp post_fail
 test_stack_ok:
 
-    ; Now we can init the LCD display
-    jsr lcd_init
-.rodata
-STR_TEST_VIA:  .asciiz "VIA "
-STR_TEST_RAM:  .asciiz "RAM "
-STR_TEST_OK:   .asciiz "OK"
-STR_TEST_FAIL: .asciiz "FAIL"
-.code
-
     ; Test VIA ------------------
     lda #POST_STAGE_VIA
     sta POST_STAGE
-    lcd_print STR_TEST_VIA
 
     jsr test_via
     bne post_fail
@@ -80,7 +69,6 @@ STR_TEST_FAIL: .asciiz "FAIL"
     ; Test ram ------------------
     lda #POST_STAGE_RAM
     sta POST_STAGE
-    lcd_print STR_TEST_RAM
 
     jsr test_ram
     bne post_fail
@@ -88,13 +76,11 @@ STR_TEST_FAIL: .asciiz "FAIL"
 post_success:
     lda #VIA_LED_GREEN
     sta VIA_IO_B
-    lcd_print STR_TEST_OK
     stp
 
 post_fail:
     lda #VIA_LED_RED
     sta VIA_IO_B
-    lcd_print STR_TEST_FAIL
     stp
 
 irq:
