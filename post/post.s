@@ -3,14 +3,14 @@
 
 POST_STAGE_ZP = 0
 POST_STAGE_STACK = 1
-POST_STAGE_VIA = 2
+POST_STAGE_IRQ = 2
 POST_STAGE_RAM = 3
 
 .import test_zp
 .import test_stack
 .import test_ram
-.import test_via
-.import test_via_irq
+.import test_irq
+.import test_irq_handler
 
 .export after_test_zp
 .export after_test_stack
@@ -23,10 +23,6 @@ main:
     ; initialize stack pointer
     ldx #$ff
     txs
-
-    ; allow all IRQ lines
-    ldx #$ff
-    sta IRQ_CTRL
 
     ; disable interrupts
     sei
@@ -59,11 +55,11 @@ after_test_stack:
     jmp post_fail
 test_stack_ok:
 
-    ; Test VIA ------------------
-    lda #POST_STAGE_VIA
+    ; Test IRQ ------------------
+    lda #POST_STAGE_IRQ
     sta POST_STAGE
 
-    jsr test_via
+    jsr test_irq
     bne post_fail
 
     ; Test ram ------------------
@@ -86,10 +82,10 @@ post_fail:
 irq:
     pha
 
-    lda #POST_STAGE_VIA
+    lda #POST_STAGE_IRQ
     cmp POST_STAGE
     bne irq_end ; not correct state?
-    jsr test_via_irq
+    jsr test_irq_handler
 
 irq_end:
     pla

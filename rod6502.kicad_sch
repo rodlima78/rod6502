@@ -653,8 +653,8 @@
   )
 
   (bus_alias "irq" (members "~{IRQ[0..7]}" "CPU_~{IRQ}"))
-  (bus_alias "cpu" (members "CPU_~{VP}" "CPU_~{ML}" "CPU_SYNC" "CPU_~{NMI}"))
   (bus_alias "ctrl" (members "RAM0_~{CS}" "ROM_~{CS}" "VIA_~{CS}" "CPU_R~{W}" "ACIA_~{CS}" "IRQ_~{CS}" "LCD_E" "RAM1_~{CS}" "DEV0_~{CS}" "DEV1_~{CS}" "DEV2_~{CS}" "DEV3_~{CS}"))
+  (bus_alias "cpu" (members "CPU_~{VP}" "CPU_~{ML}" "CPU_SYNC" "CPU_~{NMI}"))
 
   (junction (at 137.16 82.55) (diameter 0) (color 0 0 0 0)
     (uuid 14a64a68-0b35-4990-babb-a63c73474216)
