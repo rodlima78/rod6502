@@ -25,6 +25,11 @@ lcd_init:
     lda #1        ; clear display
     sta LCD_INSTR
     jsr lcd_wait
+
+    lda #$80      ; set cursor to 1st line
+    sta LCD_INSTR
+    jsr lcd_wait
+
     pla
     ply
     rts

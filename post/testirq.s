@@ -3,9 +3,16 @@
 
 .export test_irq
 .export test_irq_handler
+.importzp STATUS_STR
 
 .zeropage
 TEST_STATUS: .res 1
+
+.rodata
+STR_ERROR_NO_IRQ: .asciiz "NO INTERRUPT"
+STR_ERROR_MASK:   .asciiz "MASK ERROR"
+STR_ERROR_SPURIOUS_IRQ: .asciiz "SPURIOUS IRQ"
+STR_ERROR_BAD_CODE: .asciiz "BAD CODE"
 
 .code
 
@@ -44,7 +51,10 @@ wait_irq:
 
     sei ; disable interrupts
     lda VIA_T1CL ; reset the timer interrupt just in case
-    lda #1 ; failure!
+    lda #<STR_ERROR_NO_IRQ
+    sta STATUS_STR
+    lda #>STR_ERROR_NO_IRQ
+    sta STATUS_STR+1
     rts
 handler_called:
 
@@ -75,7 +85,12 @@ wait_irq2:
     lda #2
     cmp TEST_STATUS 
     beq handler_not_called
-    rts ; Z==0, A!=0: failed!
+    ; failed!
+    lda #<STR_ERROR_MASK
+    sta STATUS_STR
+    lda #>STR_ERROR_MASK
+    sta STATUS_STR+1
+    rts
 handler_not_called:
     dex
     bne wait_irq2
@@ -83,18 +98,29 @@ handler_not_called:
     lda VIA_T1CL ; reset the timer1 interrupt (just in case)
 
     sei ; disable interrupts
-    lda #0 ; success!
     rts
 
 test_irq_handler:
     dec TEST_STATUS ; 2 -> 1
     dec TEST_STATUS ; 1 -> 0
-    bne end_handler ; test_status != 0 ? fail
+    beq continue_handler ; test_status == 0 ? ok
 
+    lda #<STR_ERROR_SPURIOUS_IRQ
+    sta STATUS_STR
+    lda #>STR_ERROR_SPURIOUS_IRQ
+    sta STATUS_STR+1
+
+    bra end_handler
+continue_handler:
     lda IRQ_CTRL
     cmp #(1<<1) ; VIA is IRQ1
     beq end_handler
     inc TEST_STATUS ; 0 -> 1 (failure)
+    lda #<STR_ERROR_BAD_CODE
+    sta STATUS_STR
+    lda #>STR_ERROR_BAD_CODE
+    sta STATUS_STR+1
+
 end_handler:
     ; disable only now, after we checked IFR
     lda VIA_T1CL ; reset the timer interrupt

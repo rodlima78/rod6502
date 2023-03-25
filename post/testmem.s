@@ -7,18 +7,45 @@
 .import post_fail
 .import after_test_zp
 .import after_test_stack
+.importzp STATUS_STR
 
 .zeropage
 PAGE_ADDR: .res 1
 
-.code
+.data
+ERROR_ADDR: .res 5
+.export ERROR_ADDR
 
+.rodata
+HEXDIGITS: .byte "0123456789ABCDEF"
+
+.macro write_addr_error offset
+    tax ; can't use stack, let's save A in X
+    lsr a  ; shift high nibble into low nibble
+    lsr a
+    lsr a
+    lsr a
+    tay
+    lda HEXDIGITS,y ; convert to ASCII
+    sta ERROR_ADDR+offset
+    txa ; restore A
+    and #$0F ; select low nibble
+    tay
+    lda HEXDIGITS,y
+    sta ERROR_ADDR+offset+1
+    .if offset > 0
+        stz ERROR_ADDR+offset+2 ; null terminator
+    .endif
+.endmacro
+
+.code
  ; Test zero page ----------
 .macro test_mem_page page
     .local loop_w_page
     .local loop_r_page
     .local success
     .local fail
+    .local continue
     ; write data
     lda #0 ; value to be stored, and index were it'll go
 loop_w_page:
@@ -38,7 +65,14 @@ loop_r_page:
     ; A is 0 here; ZF==1
     bra success
 fail:
-    lda #1
+    write_addr_error 2 ; write address LSB
+    lda #>page
+    write_addr_error 0 ; write address MSB
+    lda #<ERROR_ADDR
+    sta STATUS_STR
+    lda #>ERROR_ADDR
+    sta STATUS_STR+1
+    lda #1 ; indicate error
 success:
 .endmacro
 
@@ -90,10 +124,15 @@ loop_r_ram:
     lda #1
     cmp PAGE_ADDR+1
     bne loop_new_page
-    lda #0
     bra success
 fail:
-    lda #1
+    write_addr_error 2
+    lda PAGE_ADDR+1
+    write_addr_error 0
+    lda #<ERROR_ADDR
+    sta STATUS_STR
+    lda #>ERROR_ADDR
+    sta STATUS_STR+1
 success:
     rts
 
