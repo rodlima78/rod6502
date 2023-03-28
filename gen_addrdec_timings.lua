@@ -22,6 +22,7 @@ rom_tce = 150 -- Max Chip Enable to Output Delay
 rom_toh = 0   -- Min Output Hold from CE, OE or address (whichever occurred first)
 rom_tdf = 50  -- Max CE or OE to Output FLoat
 
+-- LS / HCT
 ram0_tpd_lh = 15
 ram0_tpd_hl = 35
 ram1_tpd_lh = 20
@@ -29,6 +30,15 @@ ram1_tpd_hl = 55
 
 rom_tpd_lh = 50
 rom_tpd_hl = 50
+
+-- AS / AST / AHCT
+ram0_tpd_lh = 8 -- 7.9
+ram0_tpd_hl = 13 -- 12.9
+ram1_tpd_lh = 8 -- 7.9
+ram1_tpd_hl = 13 -- 13.4
+
+rom_tpd_lh = 18 -- 18.4
+rom_tpd_hl = 18 -- 18.4
 
 ----------------------------
 
