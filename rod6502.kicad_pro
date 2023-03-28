@@ -180,12 +180,7 @@
     "erc_exclusions": [
       "lib_symbol_issues|1714500|1003300|db850a69-b76f-4523-b143-b406e85ca2c7|00000000-0000-0000-0000-000000000000|||",
       "pin_to_pin|1193800|698500|438611c0-e671-4f65-8cfe-18c2195c1827|d2a06ded-d38a-4380-871b-3c5ffcbf33aa|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|457200|457200|0de80f0d-8afc-491e-8d56-740f952ce4ab|25a0f56f-784c-440e-b630-7ce439c69b6a|/031ea57b-8d17-4b45-87cc-c58302485ce1/c43edb08-6809-4421-aa3d-4af594c68b1c||",
-      "pin_to_pin|482600|406400|398d4069-68c5-482e-811d-9996e075b267|45c4da0d-ce6e-467f-a6e6-005ec6a28261|/031ea57b-8d17-4b45-87cc-c58302485ce1/9c5d281a-63de-40c0-8ec5-bca00b2715a7||",
       "pin_to_pin|711200|1028700|6c3d1b67-239a-48c3-a93a-a9a0a29b0755|8d5ae387-498b-4e35-b4df-a44dfb7f35a9|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|825500|647700|d88ed390-e82a-4bfb-b3d6-17c8fe8faffd|d9fc8a66-ebfd-4d05-8ee1-9d0acc19d28d|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|825500|673100|3eed931a-cd50-4e11-af7f-37d282585107|8cb275c8-8c5c-4dc4-8bb0-f0bf7e3215c2|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|825500|698500|78c7db5a-2b58-4851-a929-0fb63f995e39|3b203adf-27a3-4e8b-a0c4-b1b20055743c|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
       "pin_to_pin|863600|457200|88c65a0a-21a9-4d18-b081-5bab20fa709f|da84db08-bdd6-4174-8653-e04f86f5ad14|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
       "pin_to_pin|939800|266700|f58aa4a0-5a3f-4690-9bbf-c113f306e2eb|45c4da0d-ce6e-467f-a6e6-005ec6a28261|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||"
     ],
@@ -372,7 +367,7 @@
       "different_unit_net": "error",
       "duplicate_reference": "error",
       "duplicate_sheet_names": "error",
-      "endpoint_off_grid": "warning",
+      "endpoint_off_grid": "ignore",
       "extra_units": "error",
       "global_label_dangling": "warning",
       "hier_label_mismatch": "error",
@@ -383,7 +378,7 @@
       "missing_power_pin": "error",
       "missing_unit": "warning",
       "multiple_net_names": "warning",
-      "net_not_bus_member": "warning",
+      "net_not_bus_member": "error",
       "no_connect_connected": "warning",
       "no_connect_dangling": "warning",
       "pin_not_connected": "error",
@@ -437,6 +432,23 @@
         "name": "address",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgb(0, 0, 132)",
+        "track_width": 0.25,
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "clk",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "schematic_color": "rgb(72, 0, 72)",
         "track_width": 0.25,
         "via_diameter": 0.8,
         "via_drill": 0.4,
@@ -586,8 +598,6 @@
       "/Ctrl Display/~{IRQ5}": "irq",
       "/Ctrl Display/~{IRQ6}": "irq",
       "/Ctrl Display/~{IRQ7}": "irq",
-      "/Ctrl Display/~{IRQ8}": "irq",
-      "/Ctrl Display/~{IRQ9}": "irq",
       "/Ctrl Display/~{IRQ[0..9]}": "irq",
       "/DEV0_~{CS}": "ctrl",
       "/DEV1_~{CS}": "ctrl",
@@ -614,6 +624,10 @@
       {
         "netclass": "reset",
         "pattern": "/~{RST}"
+      },
+      {
+        "netclass": "clk",
+        "pattern": "/CLK"
       }
     ]
   },
@@ -712,6 +726,10 @@
     [
       "cc0af0a9-7beb-4b3a-9141-387536efad9c",
       "Data Display"
+    ],
+    [
+      "d4b06dc5-82b5-45a3-82e5-e295643c22f1",
+      "Clock"
     ],
     [
       "387d63cb-29c8-435a-8360-c060a1716418",

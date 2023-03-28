@@ -1,16 +1,14 @@
-.include "export.inc" 
-
 .import LCD_INSTR
 .import LCD_DATA
 
-RT6502_PUBLIC_ZP LCD_MSGBASE
+.globalzp LCD_MSGBASE
 
-RT6502_PUBLIC lcd_init
-RT6502_PUBLIC lcd_wait
-RT6502_PUBLIC lcd_clear
-RT6502_PUBLIC lcd_printchar
-RT6502_PUBLIC lcd_hex
-RT6502_PUBLIC lcd_string
+.global lcd_init
+.global lcd_wait
+.global lcd_clear
+.global lcd_printchar
+.global lcd_hex
+.global lcd_string
 
 .macro lcd_print strz
     pha

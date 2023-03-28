@@ -394,7 +394,6 @@
     )
   )
 
-
   (junction (at 97.79 58.42) (diameter 0) (color 0 0 0 0)
     (uuid 210c7202-1f9a-4a94-be7c-0043885f754b)
   )
@@ -916,14 +915,6 @@
     (uuid f8338de2-afa7-4ce8-b24e-fe3c0807f89f)
   )
 
-  (global_label "CLK" (shape input) (at 44.45 35.56 180) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right))
-    (uuid d3600f53-6e0c-47ae-8efc-c4a46247cefb)
-    (property "Intersheetrefs" "${INTERSHEET_REFS}" (at 37.9761 35.56 0)
-      (effects (font (size 1.27 1.27)) (justify right) hide)
-    )
-  )
-
   (hierarchical_label "R~{W}" (shape input) (at 44.45 66.04 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right))
     (uuid 0b6b82bd-276a-4fd8-aed6-5c0ba23c487d)
@@ -935,6 +926,10 @@
   (hierarchical_label "PB[0..7]" (shape bidirectional) (at 104.14 60.96 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid 23bda4d4-787d-461a-b68e-24ed623d8b59)
+  )
+  (hierarchical_label "CLK" (shape input) (at 44.45 35.56 180) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid 2a64be88-2a29-4a02-ad1c-8feba3434062)
   )
   (hierarchical_label "~{IRQ}" (shape output) (at 44.45 40.64 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right))

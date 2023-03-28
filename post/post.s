@@ -6,22 +6,25 @@ POST_STAGE_ZP = 0
 POST_STAGE_STACK = 1
 POST_STAGE_IRQ = 2
 POST_STAGE_RAM = 3
+POST_STAGE_ACIA = 4
 
 .import test_zp
 .import test_stack
 .import test_ram
 .import test_irq
 .import test_irq_handler
+.import test_acia
 
 .export after_test_zp
 .export after_test_stack
 .exportzp STATUS_STR
 
 .rodata
-STR_TEST_ZP:   .asciiz "ZP "
-STR_TEST_STACK:.asciiz "STK "
-STR_TEST_RAM:  .asciiz "RAM "
-STR_TEST_IRQ:  .asciiz "IRQ "
+STR_TEST_ZP:   .asciiz "Z"
+STR_TEST_STACK:.asciiz "S"
+STR_TEST_RAM:  .asciiz "R"
+STR_TEST_IRQ:  .asciiz "I"
+STR_TEST_ACIA: .asciiz "A"
 STR_TEST_OK:   .asciiz "OK"
 STR_TEST_FAIL: .asciiz "FAIL"
 
@@ -132,6 +135,14 @@ after_test_stack:
     sta POST_STAGE
     my_lcd_print STR_TEST_IRQ
     jsr test_irq
+    lda (STATUS_STR) ; any error?
+    bne post_end     ; yes, go to end
+
+    ; Test ACIA ------------------
+    lda #POST_STAGE_ACIA
+    sta POST_STAGE
+    my_lcd_print STR_TEST_ACIA
+    jsr test_acia
     lda (STATUS_STR) ; any error?
     bne post_end     ; yes, go to end
 

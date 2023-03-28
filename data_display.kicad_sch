@@ -763,7 +763,6 @@
     )
   )
 
-
   (junction (at 38.1 53.34) (diameter 0) (color 0 0 0 0)
     (uuid 0c4bb0f6-e434-4a83-9842-645fb82dc397)
   )
@@ -1447,7 +1446,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid ce33ae3c-48f6-4652-9138-ba8557551714)
   )
-  (label "A6" (at 25.4 83.82 0) (fields_autoplaced)
+  (label "D6" (at 25.4 83.82 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid e56fe98f-f9a2-4747-8190-4bc26de15d35)
   )

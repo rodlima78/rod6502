@@ -1497,7 +1497,6 @@
     )
   )
 
-
   (junction (at 33.02 48.26) (diameter 0) (color 0 0 0 0)
     (uuid 24c3e6d3-fe53-4925-9a28-ae45cd3859f9)
   )
@@ -1959,14 +1958,6 @@
     (uuid e78a0467-6561-42e4-b620-4eb9ab55e5e6)
   )
 
-  (global_label "CLK" (shape input) (at 66.04 29.21 180) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right))
-    (uuid fc785646-3da3-4ca6-baa1-c8d645960c2d)
-    (property "Intersheetrefs" "${INTERSHEET_REFS}" (at 59.5661 29.21 0)
-      (effects (font (size 1.27 1.27)) (justify right) hide)
-    )
-  )
-
   (hierarchical_label "ACIA_~{CS}" (shape output) (at 87.63 69.85 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid 1eb893c0-5b4b-42bc-8652-02153f8e6083)
@@ -2000,6 +1991,10 @@
   (hierarchical_label "DEV0_~{CS}" (shape output) (at 87.63 74.93 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid b53af7fa-3d94-4d53-bc35-afe8bcb5516b)
+  )
+  (hierarchical_label "CLK" (shape input) (at 66.04 29.21 180) (fields_autoplaced)
+    (effects (font (size 1.27 1.27)) (justify right))
+    (uuid c940f6b0-5303-41d9-8eb7-b04189960280)
   )
   (hierarchical_label "ROM_~{CS}" (shape output) (at 89.535 102.87 0)
     (effects (font (size 1.27 1.27)) (justify left))
@@ -2390,7 +2385,7 @@
   )
 
   (symbol (lib_id "74xx:74LS04") (at 170.18 112.395 0) (unit 7)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (in_bom yes) (on_board yes) (dnp no)
     (uuid 68a6a5fd-f74d-4c73-9826-eeb11faed1d9)
     (property "Reference" "U8" (at 176.53 111.76 0)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -2404,7 +2399,7 @@
     (property "Datasheet" "http://www.ti.com/lit/gpn/sn74LS04" (at 170.18 112.395 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "tpd" "15ns" (at 164.465 120.015 0) (show_name)
+    (property "tpd" "15ns" (at 170.18 112.268 0) (show_name)
       (effects (font (size 1.27 1.27)))
     )
     (pin "1" (uuid ba733e3b-1256-4ce5-b727-e095996996e8))
