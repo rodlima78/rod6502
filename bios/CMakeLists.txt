@@ -5,7 +5,7 @@ add_library(bios INTERFACE)
 target_include_directories(bios INTERFACE include)
 target_link_options(bios INTERFACE -C ${CMAKE_CURRENT_SOURCE_DIR}/firmware_apps.cfg)
 set_target_properties(bios PROPERTIES
-    LINK_DEPENDS
+    INTERFACE_LINK_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/firmware_apps.cfg
 )
 
