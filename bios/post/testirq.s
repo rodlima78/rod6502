@@ -1,9 +1,10 @@
 .include "via.inc"
+.include "lcd.inc"
 .include "irq.inc"
 
-.export test_irq
-.export test_irq_handler
 .importzp STATUS_STR
+.import irq_table
+.export test_irq
 
 .zeropage
 TEST_STATUS: .res 1
@@ -17,6 +18,19 @@ STR_ERROR_BAD_CODE: .asciiz "BAD CODE"
 .code
 
 test_irq:
+    ; initialize IRQ jump table with our handler
+    ldx #(8*2)
+@loop:
+    ; copy MSB (we're going from back to front)
+    lda #>test_irq_handler
+    sta irq_table-1,x
+    dex
+    ; copy LSB
+    lda #<test_irq_handler
+    sta irq_table-1,x
+    dex
+    bne @loop
+
     lda #2 ; irq handler not called
     sta TEST_STATUS
 
@@ -101,6 +115,8 @@ handler_not_called:
     rts
 
 test_irq_handler:
+    plx ; need to pull X that was pushed in main's irq_handle
+
     dec TEST_STATUS ; 2 -> 1
     dec TEST_STATUS ; 1 -> 0
     beq continue_handler ; test_status == 0 ? ok
@@ -112,6 +128,7 @@ test_irq_handler:
 
     bra end_handler
 continue_handler:
+
     lda IRQ_CTRL
     cmp #(1<<1) ; VIA is IRQ1
     beq end_handler
@@ -124,4 +141,4 @@ continue_handler:
 end_handler:
     ; disable only now, after we checked IFR
     lda VIA_T1CL ; reset the timer interrupt
-    rts
+    rti

@@ -6,25 +6,25 @@ POST_STAGE_ZP = 0
 POST_STAGE_STACK = 1
 POST_STAGE_IRQ = 2
 POST_STAGE_RAM = 3
-POST_STAGE_ACIA = 4
 
 .import test_zp
 .import test_stack
 .import test_ram
 .import test_irq
 .import test_irq_handler
-.import test_acia
 
 .export after_test_zp
 .export after_test_stack
 .exportzp STATUS_STR
+
+.export post
+.import after_post
 
 .rodata
 STR_TEST_ZP:   .asciiz "Z"
 STR_TEST_STACK:.asciiz "S"
 STR_TEST_RAM:  .asciiz "R"
 STR_TEST_IRQ:  .asciiz "I"
-STR_TEST_ACIA: .asciiz "A"
 STR_TEST_OK:   .asciiz "OK"
 STR_TEST_FAIL: .asciiz "FAIL"
 
@@ -79,20 +79,16 @@ end:
 .endmacro
 
 .code
-main:
-    ; initialize stack pointer
-    ldx #$ff
-    txs
-
+post:
     ; indicate no error
     stz STATUS_STR
 
     ; disable interrupts
     sei
 
-    ; Set VIA_PB to output (hopefully it works!)
-    lda #$FF
-    sta VIA_DIR_B
+    ; Set led pins to output (hopefully it works!)
+    lda #(VIA_LED_GREEN+VIA_LED_RED)
+    tsb VIA_DIR_B
 
     ; Turn on red and green leds
     lda #(VIA_LED_GREEN+VIA_LED_RED)
@@ -100,7 +96,9 @@ main:
 
     my_lcd_init
 
-    ; Test zeropage ------------------
+    ; ---------------------------------------------------------------------------
+    ; Test zeropage 
+    ; ---------------------------------------------------------------------------
     lda #POST_STAGE_ZP
     sta POST_STAGE
     my_lcd_print STR_TEST_ZP
@@ -108,78 +106,66 @@ main:
 after_test_zp:
     ; STATUS_STR might be garbled, use A to check if failed
     cmp #0
-    bne post_end
+    bne post_failure
 
     ; from now on we can use zeropage
     stz STATUS_STR ; might have been garbled, redefine it
 
-    ; Test stack ------------------
+    ; ---------------------------------------------------------------------------
+    ; Test stack 
+    ; ---------------------------------------------------------------------------
     lda #POST_STAGE_STACK
     sta POST_STAGE
     my_lcd_print STR_TEST_STACK
     jmp test_stack
 after_test_stack:
     cmp #0
-    bne post_end
+    bne post_failure
 
-    ; Test ram ------------------
+    ; ---------------------------------------------------------------------------
+    ; Test ram
+    ; ---------------------------------------------------------------------------
     lda #POST_STAGE_RAM
     sta POST_STAGE
     my_lcd_print STR_TEST_RAM
     jsr test_ram
     lda (STATUS_STR) ; any error?
-    bne post_end     ; yes, go to end
+    bne post_failure     ; yes, go to end
 
-    ; Test IRQ ------------------
+    ; ---------------------------------------------------------------------------
+    ; Test IRQ
+    ; ---------------------------------------------------------------------------
     lda #POST_STAGE_IRQ
     sta POST_STAGE
     my_lcd_print STR_TEST_IRQ
     jsr test_irq
     lda (STATUS_STR) ; any error?
-    bne post_end     ; yes, go to end
+    bne post_failure     ; yes, go to end
 
-    ; Test ACIA ------------------
-    lda #POST_STAGE_ACIA
-    sta POST_STAGE
-    my_lcd_print STR_TEST_ACIA
-    jsr test_acia
-    lda (STATUS_STR) ; any error?
-    bne post_end     ; yes, go to end
+    ; ---------------------------------------------------------------------------
+    ; Wrap up 
+    ; ---------------------------------------------------------------------------
 
-post_end:
-    bne failure
-
-    ; set message to OK
-    lda #<STR_TEST_OK
-    sta STATUS_STR
-    lda #>STR_TEST_OK
-    sta STATUS_STR+1
+post_success:
+    lda #($80+$40) ; cursor to 2nd line
+    sta LCD_INSTR
+    jsr lcd_wait
+    lcd_print STR_TEST_OK
 
     lda #VIA_LED_GREEN
-    bra update_led
-failure:
-    lda #VIA_LED_RED
-update_led:
     sta VIA_IO_B
 
+    lda #0 ; indicate success
+    jmp after_post
+
+post_failure:
     lda #($80+$40) ; cursor to 2nd line
     sta LCD_INSTR
     my_lcd_wait
     my_lcd_print (STATUS_STR)
-    stp
 
-irq:
-    pha
-    lda #POST_STAGE_IRQ
-    cmp POST_STAGE
-    bne irq_end ; not correct state?
-    jsr test_irq_handler
+    lda #VIA_LED_RED
+    sta VIA_IO_B
 
-irq_end:
-    pla
-    rti
-
-.segment "VECTORS"
-.word $0000
-.word main
-.word irq
+    lda #1 ; indicate failure
+    jmp after_post
