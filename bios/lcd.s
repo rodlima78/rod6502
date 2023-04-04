@@ -3,7 +3,6 @@
 .code
 
 lcd_init:
-    phy
     pha
 
     ; It's highly recommended that we call the function set 3 times
@@ -31,7 +30,6 @@ lcd_init:
     jsr lcd_wait
 
     pla
-    ply
     rts
 
 lcd_wait:
@@ -43,23 +41,13 @@ lcd_clear:
     pha
     lda #1
     sta LCD_INSTR
-    lsr lcd_wait
+    jsr lcd_wait
     pla
     rts
 
 lcd_printchar:
-    pha
     sta LCD_DATA
     jsr lcd_wait
-    lda LCD_INSTR
-    and #$7F
-    cmp #$14
-    bne lcd_printchar0
-    lda #$C0
-    sta LCD_INSTR
-    jsr lcd_wait
-lcd_printchar0:
-    pla
     rts
 
 lcd_hex:

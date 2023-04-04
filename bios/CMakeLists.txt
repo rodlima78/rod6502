@@ -14,6 +14,11 @@ add_executable(bios_rom
     main.s
     lcd.s
     sys.s
+    irq.s
+    acia.s
+    cmd.s
+    cmd_load.s
+    cmd_run.s
     post/post.s
     post/testmem.s
     post/testirq.s

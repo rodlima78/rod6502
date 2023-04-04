@@ -129,7 +129,7 @@ test_irq_handler:
     bra end_handler
 continue_handler:
 
-    lda IRQ_CTRL
+    lda IRQ_DATA
     cmp #(1<<1) ; VIA is IRQ1
     beq end_handler
     inc TEST_STATUS ; 0 -> 1 (failure)
