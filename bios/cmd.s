@@ -6,6 +6,8 @@
 LF = $0A
 PROMPT = '>'
 
+.feature string_escapes
+
 .code
 cmd_loop:
     lda #(VIA_LED_GREEN+VIA_LED_RED)
@@ -16,20 +18,11 @@ cmd_loop:
     lda #0
     sta VIA_IO_B
 
-@loop:
-    jsr acia_get_char
-    bne @error
-
-    pha
-    jsr lcd_printchar
-    pla
-
-    jsr acia_put_char
+    jsr acia_put_const_string
+    .asciiz "Rodolfo Schulz de Lima\r\n"
 
     lda #VIA_LED_GREEN
     sta VIA_IO_B
-
-    bra @loop
 
     stp
 

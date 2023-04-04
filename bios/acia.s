@@ -1,6 +1,7 @@
 .include "acia.inc"
 .include "via.inc"
 .include "irq.inc"
+.include "lcd.inc"
 
 .import default_irq_handler
 .import irq_table
@@ -147,50 +148,49 @@ acia_put_char:
 ADDR_BUFFER: .res 2
 
 .code
-; input: string comes after jsr
-; return: A==0 ? ok
+; input: string comes right after jsr
 acia_put_const_string:
     phx
     ; stack: X Rl Rh
     tsx
-    lda STACK_SEG+1,x
-    sta ADDR_BUFFER
+    pha
     lda STACK_SEG+2,x
+    sta ADDR_BUFFER
+    lda STACK_SEG+3,x
     sta ADDR_BUFFER+1
 
     phy
-    ; stack: Y X Rl Rh
-
-    ldy #0 ; beginning of string
+    ldy #1                      ; ADDR_BUFFER points to 1 byte before the start of string,
+                                ; so we start our loop with index == 1
 @send_char:
     lda (ADDR_BUFFER),y
-    beq @end ; end of string (A==0)? go to end
-    jsr acia_put_char ; send character
-    bne @error_ch_tested ; error? go to error handling
+    beq @end                    ; end of string (A==0)? go to end
+    jsr acia_put_char           ; send character
     iny
-    beq @error_ch_not_tested  ; string too long (y wrapped around)? go to error handling
-    bra @send_char
+    bne @send_char              ; string not too long (y didn't wrap around)? continue
+    bra @error                  ; or else go to error
 
-    ; in case of error, make Y point to null terminator
-@error_ch_tested: ; Y currently points to character already tested for \0
 @loop_find_null:
     iny
-@error_ch_not_tested: ; Y points to character that wasn't tested for \0 yet
-    lda (ADDR_BUFFER),y
-    bne @loop_find_null ; not \0 yet? keep looking for it
+@error: 
+    lda (ADDR_BUFFER),y         ; Y points to character that wasn't tested for \0 yet
+    bne @loop_find_null         ; no \0 yet? keep looking for it
 
 @end:
     ; Y points to null terminator
-    ; S:(X+1) still points to the buffer address
-    tya ; A has the string length
+    ; S:(X+2) still points to the buffer address
+    tya
+    ; Adds Y to return address stored by jsr,
+    ; to make it point to the null terminator, which is
+    ; one byte before the actual return address, as expected by rts.
     clc
-    ; Adds string length to return address, to make it point to the null terminator
-    ; (one byte before the actual return address, as expected by rts)
-    adc STACK_SEG+1,x
-    bcc @end2
     adc STACK_SEG+2,x
-@end2:
+    sta STACK_SEG+2,x
+    bcc @skip_high
+    inc STACK_SEG+3,x
+@skip_high:
     ply
+    pla
     plx
     rts
 
