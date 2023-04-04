@@ -35,6 +35,14 @@ DATABIT_5 = %01100000
 
 acia_start:
     pha
+
+    lda ACIA_CMD
+    bit #1          ; data terminal is ready?
+    beq @must_setup ; no, must set it up
+    pla             ; yes, early return
+    rts
+@must_setup:
+
     ; PB6 is input
     lda #$40
     trb VIA_DIR_B
@@ -47,9 +55,11 @@ acia_start:
     lda #((1<<5) | $80)
     sta VIA_IER
 
-    ; generate interrupt after 10 bits (1+8+1) are output (PB6 is bauds*16)
-    lda #(10*16)
-    sta VIA_T2CL
+    ; set our rx irq handler to IRQ0 (linked to ACIA)
+    lda #<rx_interrupt_handler
+    sta irq_table+0*2+0
+    lda #>rx_interrupt_handler
+    sta irq_table+0*2+1
 
     ; set our tx irq handler to IRQ1 (linked to VIA)
     lda #<tx_interrupt_handler
@@ -69,18 +79,24 @@ acia_start:
     lda #(BAUDS_9600 | DATABIT_8 | STOPBIT_1)
     sta ACIA_CTRL
 
-    ; data terminal ready (b0)
-    ; recv irq disabled (b1)
-    ; req to send yes (no interrupt) (b2-3)
-    ; no echo(b4),
-    lda #%01011
+    ; data terminal ready (b0==1)
+    ; recv irq enabled (b1==0)
+    ; ready to send yes  (b2-3 == %10)
+    ; no echo(b4 == 0)
+    lda #%01001
     sta ACIA_CMD
 
     ; Wait till we detect a carrier
+@loop_wait_ready:
+    wai
 @wait_ready:
     lda #%00100000
     bit ACIA_STATUS
-    bne @wait_ready
+    bne @loop_wait_ready
+
+    ; disable acia interrupts
+    lda #%10
+    tsb ACIA_CMD
 
     pla
     rts
@@ -95,6 +111,12 @@ acia_stop:
     ; disable Timer2 pulse counter
     lda #%00000000
     sta VIA_ACR
+
+    ; restore IRQ0 handler to default
+    lda #<default_irq_handler
+    sta irq_table+0*2+0
+    lda #>default_irq_handler
+    sta irq_table+0*2+1
 
     ; restore IRQ1 handler to default
     lda #<default_irq_handler
@@ -129,24 +151,36 @@ acia_disable_echo:
 
 ; return: A -> character read
 acia_get_char:
+    lda #%10  ; enable receiver interrupt request
+    trb ACIA_CMD
+
+@wait_more:
+    wai
     lda ACIA_STATUS
     bit #%1111 ; receiver data register full or any error?
-    beq acia_get_char   ; no? wait a bit more
+    beq @wait_more   ; no? wait a bit more
 
     ; test for Overrun (bit2==1)
     ;          Frame error (bit1==1)
     ;          Parity error (bit0==1)
     and #%00000111
-    bne @end            ; has error? go to end (Z==0: error)
-    php                 ; otherwise, keep Z==1 to indicate no error
-    lda ACIA_DATA       ; load char in A
+    php           ; keep flags for recv result, Z==1 ? ok : failure
+
+    lda #%10 ; disable receiver interrupt request
+    tsb ACIA_CMD
+
+    lda ACIA_DATA ; read data even in case of errors, to reset recv error bits
     plp                 
-@end:
+
     rts
 
 ; input: A -> character to be written out
 acia_put_char:
     sta ACIA_DATA
+
+    ; generate interrupt after 10 bits (1+8+1) are output (PB6 is bauds*16)
+    lda #(10*16)
+    sta VIA_T2CL
     stz VIA_T2CH ; start counter
     wai          ; wait for interrupt
     rts
@@ -203,5 +237,10 @@ acia_put_const_string:
 
 tx_interrupt_handler:
     ldx VIA_T2CL ; clear up Timer2 interrupt flag on VIA
+    plx ; was pushed in main handler, time to pop it out
+    rti
+
+rx_interrupt_handler:
+    ldx ACIA_STATUS ; clear up acia interrupt flag
     plx ; was pushed in main handler, time to pop it out
     rti
