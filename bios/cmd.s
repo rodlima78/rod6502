@@ -24,6 +24,9 @@ cmd_jumptable:
     .addr cmd_load
     .addr cmd_run
 
+CMD_LOAD  = 0
+CMD_RUN   = 1
+
 STR_LOAD: .asciiz "load"
 STR_RUN: .asciiz "run"
 
@@ -70,35 +73,34 @@ read_cmd:
     bra @get_char
 
 @got_cmd:
-    jsr acia_put_char ; echo line feed back to terminal
+    jsr acia_put_const_string
+    .asciiz "\r\n"
     stz CMD_BUFFER,x ; NUL marks end of buffer
 
     ; Now let's compare the cmd string against the commands we define
-@compare_load:
+
+.macro compare str, next
     ldx #0 
-@loop_load:
-    lda CMD_BUFFER,x
-    cmp STR_LOAD,x   ; compare cmd and "load"
-    bne @compare_run ; different? try "run"
+:   lda CMD_BUFFER,x
+    cmp str,x         ; compare cmd and "load"
+    bne next          ; different? try next one
     inx
-    cpx #.sizeof(STR_LOAD) ; reached end of "load" string?
-    bne @loop_load      ; no? continue comparison
+    cpx #.sizeof(str) ; reached end of string?
+    bne :-            ; no? continue comparison
+.endmacro
+
+@compare_run:
+    compare STR_RUN, @compare_load
+    lda #CMD_RUN
+    rts
+
+@compare_load:
+    compare STR_LOAD, @error_invalid_cmd
     lda #CMD_LOAD
     rts
 
-@error:
+@error_invalid_cmd:
     jsr acia_put_const_string
     .asciiz "invalid command\r\n"
-    bra @prompt
+    jmp @prompt
 
-@compare_run:
-    ldx #0 
-@loop_run:
-    lda CMD_BUFFER,x
-    cmp STR_RUN,x   ; compare cmd and "run"
-    bne @error ; different? error!
-    inx
-    cpx #.sizeof(STR_RUN) ; reached end of "load" string?
-    bne @loop_run      ; no? continue comparison
-    lda #CMD_RUN
-    rts
