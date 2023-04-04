@@ -9,3 +9,4 @@
 .global acia_put_char
 .global acia_put_const_string
 .global acia_enable_echo
+.global acia_disable_echo

@@ -110,14 +110,21 @@ acia_stop:
     rts
 
 acia_enable_echo:
-    cmp #0       ; wants to disable (A==0)?
-    bne @enable  ; no, go to enable
-    lda #$10     ; yes, disable
-    trb ACIA_CMD ;  reset bit4: disable echo
+    pha
+    lda ACIA_CMD
+    and #%11100011
+    ora #%00010000
+    sta ACIA_CMD
+    pla
     rts
-@enable:
-    lda #$10     ; set bit4: enable echo
-    tsb ACIA_CMD
+
+acia_disable_echo:
+    pha
+    lda ACIA_CMD
+    and #%11100011
+    ora #%00001000
+    sta ACIA_CMD
+    pla
     rts
 
 ; return: A -> character read
