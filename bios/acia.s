@@ -47,10 +47,6 @@ acia_start:
     lda #$40
     trb VIA_DIR_B
 
-    ; Timer2 count down pulses on PB6
-    lda #%00100000
-    sta VIA_ACR
-
     ; enable interrupts on timer2
     lda #((1<<5) | $80)
     sta VIA_IER
@@ -149,22 +145,74 @@ acia_disable_echo:
     pla
     rts
 
+.zeropage
+; 3: need to wait / waiting 64k cycles
+; 2: waiting 64k cycles 
+; 1: waiting 22528 cycles
+; 0: timed out!
+timeout_state: .res 1
+
+.code
+; input: A -> timeout (seconds)
 ; return: A -> character read
 acia_get_char:
+    ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
+    phx
+
+    tax ; X now holds how many seconds to wait
+
+    cpx #0
+    beq @no_timeout
+
+    lda #%00100000 ; Timer2 count down pulses on PB6
+    sta VIA_ACR
+
+@wait_one_second:
+    lda #3
+    sta timeout_state
+
+    lda #255
+    sta VIA_T2CL
+    sta VIA_T2CH ; start counter
+    bra @enable_acia_interrupt
+
+@no_timeout:
+    stz timeout_state
+
+@enable_acia_interrupt:
     lda #%10  ; enable receiver interrupt request
     trb ACIA_CMD
 
 @wait_more:
     wai
+    cpx #0              ; doesn't have timeout?
+    beq @ignore_timeout ; yes, ignore it
+    lda timeout_state   ; no, timeout_state==0?
+    beq @timed_out      ; yes, signal timeout
+@ignore_timeout:
     lda ACIA_STATUS
     bit #%1111 ; receiver data register full or any error?
     beq @wait_more   ; no? wait a bit more
+    and #.lobyte(~%1000) ; signal no timeout (we don't need data register full info anymore)
+    bra @check_errors
 
-    ; test for Overrun (bit2==1)
+@timed_out:
+    dex
+    bne @wait_one_second
+    lda ACIA_STATUS
+    ora #%1000 ; bit3=1 -> timeout
+
+@check_errors:
+    plx ; x not needed anymore
+
+    ; test for Timeout (bit3==1)
+    ;          Overrun (bit2==1)
     ;          Frame error (bit1==1)
     ;          Parity error (bit0==1)
-    and #%00000111
+    and #%00001111
     php           ; keep flags for recv result, Z==1 ? ok : failure
+
+    stz VIA_ACR   ; disable Timer2 pulse counter
 
     lda #%10 ; disable receiver interrupt request
     tsb ACIA_CMD
@@ -177,8 +225,11 @@ acia_get_char:
 ; input: A -> character to be written out
 acia_put_char:
     sta ACIA_DATA
+    stz timeout_state ; so that interrupt handler won't using it
 
     ; generate interrupt after 10 bits (1+8+1) are output (PB6 is bauds*16)
+    lda #%00100000 ; Timer2 count down pulses on PB6
+    sta VIA_ACR
     lda #(10*16)
     sta VIA_T2CL
     stz VIA_T2CH ; start counter
@@ -236,7 +287,29 @@ acia_put_const_string:
     rts
 
 tx_interrupt_handler:
+    pha
+    lda timeout_state
+    beq @timed_out ; 0 ? timeout
+    dec timeout_state
+    beq @timed_out ; 0 ? timeout
+    cmp #3         ; 3 <= state (before decrement) ?
+    bcs @wait_64k  ; yes, wait 64k cycles
+
+    stz VIA_T2CL   ; no, wait for 22528 cycles ($5800)
+    lda #$58
+    sta VIA_T2CH ; start counter
+    bra @end
+@wait_64k:
+    lda #255
+    sta VIA_T2CL
+    sta VIA_T2CH ; start counter
+    bra @end
+
+@timed_out:
     ldx VIA_T2CL ; clear up Timer2 interrupt flag on VIA
+
+@end:
+    pla
     plx ; was pushed in main handler, time to pop it out
     rti
 

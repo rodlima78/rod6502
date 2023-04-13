@@ -47,7 +47,9 @@ read_cmd:
 
     ldx #0 ; points to address to store next char to be read
 @get_char:
+    lda #5
     jsr acia_get_char
+    bne @comm_error
     cmp #$0d            ; line feed?
     beq @got_cmd        ; yes, command was entered
     cmp #$08            ; backspace?
@@ -62,6 +64,11 @@ read_cmd:
 @buffer_overflow:
     jsr acia_put_const_string
     .asciiz "\r\ncommand too large\r\n"
+    bra @prompt
+
+@comm_error:
+    jsr acia_put_const_string
+    .asciiz "\r\ncommunication error\r\n"
     bra @prompt
 
 @backspace:
