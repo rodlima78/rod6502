@@ -47,7 +47,7 @@ read_cmd:
 
     ldx #0 ; points to address to store next char to be read
 @get_char:
-    lda #5
+    lda #0 ; no timeout
     jsr acia_get_char
     bne @comm_error
     cmp #$0d            ; line feed?

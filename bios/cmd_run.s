@@ -1,10 +1,6 @@
 .include "cmd.inc"
-.include "lcd.inc"
-
-.rodata
-STR_RUN: .asciiz "RUN"
+.import __RAM_USER_START__
 
 .code
 cmd_run:
-    lcd_print STR_RUN
-    jmp cmd_loop
+    jmp __RAM_USER_START__

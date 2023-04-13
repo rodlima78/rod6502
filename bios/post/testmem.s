@@ -11,10 +11,7 @@
 
 .zeropage
 PAGE_ADDR: .res 1
-
-.data
 ERROR_ADDR: .res 5
-.export ERROR_ADDR
 
 .rodata
 HEXDIGITS: .byte "0123456789ABCDEF"
@@ -88,7 +85,7 @@ test_ram:
     ; start w/ last page in RAM
     lda #0
     sta PAGE_ADDR
-    lda #<(__RAM_SIZE__/256-1)
+    lda #<((__RAM_BASE_SIZE__+__RAM_BIOS_SIZE__+__RAM_USER_SIZE__)/256-1)
     sta PAGE_ADDR+1
 
     ; write data
