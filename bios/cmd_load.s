@@ -14,6 +14,7 @@ CAN = $18
 next_block: .res 1
 checksum: .res 1
 dest_addr: .res 2
+retries: .res 1
 
 ; ref: http://moscova.inria.fr/~doligez/zmodem/ymodem.txt pg. 20
 
@@ -21,10 +22,6 @@ dest_addr: .res 2
 cmd_load:
     jsr acia_put_const_string
     .asciiz "Please initiate transfer..."
-
-    ; signal sender to start transfer
-    lda #NAK
-    jsr acia_put_char
 
     lda #1 ; next block number == 1
     sta next_block
@@ -34,6 +31,14 @@ cmd_load:
     sta dest_addr
     lda #>__RAM_USER_START__
     sta dest_addr+1
+
+    ; 10 retries
+    lda #10
+    stz retries
+
+    ; signal sender to start transfer
+    lda #NAK
+    jsr acia_put_char
 
 @start_block:
     ; start receiving block
@@ -103,7 +108,14 @@ cmd_load:
 @error:
     lda #NAK
     jsr acia_put_char
-    jmp @start_block
+
+    dec retries      ; still more retries?
+    bne @start_block ; yes, try it once again   
+
+    jsr acia_purge   ; no, empty recv channel
+    jsr acia_put_const_string
+    .asciiz " FAILED\r\n"
+    jmp cmd_loop
 
 @file_received:
     ; acknowledge that we have received the file

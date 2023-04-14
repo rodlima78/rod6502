@@ -145,6 +145,20 @@ acia_disable_echo:
     pla
     rts
 
+; Purges the recv channel. We get chars until
+; we get a timeout.
+acia_purge:
+    pha 
+@retry:
+    lda #1      ; 1s timeout
+    jsr acia_get_char
+    beq @retry  ; got char (no error)? get next char
+    bit #%1000  ; timeout?
+    beq @retry  ; no (some other error)? try again
+@end:           ; yes, channel is empty
+    pla
+    rts
+
 .zeropage
 ; 3: need to wait / waiting 64k cycles
 ; 2: waiting 64k cycles 
