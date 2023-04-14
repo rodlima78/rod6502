@@ -9,6 +9,11 @@
 .import init_irq
 .import irq_handler
 
+.export app_loaded
+
+.zeropage
+app_loaded: .res 1
+
 .code
 bios_main:
     sei         ; disable interrupts
@@ -27,6 +32,8 @@ after_post:
 post_ok:
     jsr init_irq
     jsr lcd_init
+    stz app_loaded ; no app loaded yet
+
     jmp cmd_loop
 
 .segment "VECTORS"

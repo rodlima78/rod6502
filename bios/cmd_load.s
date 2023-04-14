@@ -3,6 +3,7 @@
 .include "acia.inc"
 
 .import __RAM_USER_START__
+.importzp app_loaded
 
 SOH = $01
 EOT = $04
@@ -22,6 +23,9 @@ retries: .res 1
 cmd_load:
     jsr acia_put_const_string
     .asciiz "Please initiate transfer..."
+
+    ; signal that app is NOT loaded
+    stz app_loaded
 
     lda #1 ; next block number == 1
     sta next_block
@@ -124,5 +128,9 @@ cmd_load:
 
     jsr acia_put_const_string
     .asciiz " OK\r\n"
+    
+    ; signal that app is now loaded
+    lda #$FF
+    sta app_loaded
 
     jmp cmd_loop
