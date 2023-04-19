@@ -28,26 +28,8 @@ my_lcd_wait:
     bmi my_lcd_wait ; bit 7 is one (busy)? continue waiting
     rts
 
-my_lcd_init:
-    lda #%00111000   ; set 8-bit operation, 2 lines, 5x7
-    ; call it 3 times for proper set up while powering up
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    lda #%110     ; entry mode set: increment, do not shift
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    lda #%1110   ; display on, cursor on, blink off
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    lda #$80     ; set cursor to start of first line
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    lda #1        ; clear display
-    sta LCD_INSTR
-    jsr my_lcd_wait
-    rts
+.interruptor irq0_handler, 1
+
+irq0_handler:
+    rti
 

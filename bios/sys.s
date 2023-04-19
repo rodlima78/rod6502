@@ -1,4 +1,6 @@
 .include "sys.inc"
 
+.import cmd_loop
+
 sys_exit:
-    stp
+    jmp cmd_loop
