@@ -31,5 +31,8 @@
 .import __DATA_RUN__
 .import __DATA_SIZE__
 
-.import __BSS_RUN__
-.import __BSS_SIZE__
+.import __HEAP_RUN__
+.import __HEAP_SIZE__
+
+; functions
+.global sys_malloc

@@ -7,6 +7,7 @@
 .export after_post
 
 .import init_irq
+.import init_mem
 .import irq_handler
 
 .export app_loaded
@@ -32,6 +33,7 @@ after_post:
 post_ok:
     jsr init_irq
     jsr lcd_init
+    jsr init_mem
     stz app_loaded ; no app loaded yet
 
     jmp cmd_loop
