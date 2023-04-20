@@ -1,5 +1,6 @@
 .include "cmd.inc"
 .include "acia.inc"
+.include "mem.inc"
 
 .importzp app_loaded
 
@@ -29,6 +30,10 @@ blen:  .res 2 ; bss length
 zbase: .res 2 ; original zeropage base address
 zlen:  .res 2 ; zeropage length
 slen:  .res 2 ; stack length
+
+dest_tbase: .res 2
+dest_dbase: .res 2
+dest_bbase: .res 2
 
 STATE_HEADER  = 0
 STATE_TEXTSEG = 1
@@ -246,6 +251,22 @@ parse_header:
     cpx #18
     bne @loop_seginfo
 
+    ; allocate memory for the segments
+    ldx #tlen
+    ldy #dest_tbase
+    jsr sys_malloc
+    bne @error
+
+    ldx #dlen
+    ldy #dest_dbase
+    jsr sys_malloc
+    bne @error
+
+    ldx #blen
+    ldy #dest_bbase
+    jsr sys_malloc
+    bne @error
+
     ; read header options (ignore them) ---------------
 @read_header_option:
     jsr read_byte
@@ -291,11 +312,11 @@ parse_textseg:
 
 @read_seg:
     jsr read_byte
-    sta (tbase)
+    sta (dest_tbase)
     ; increment base
-    inc tbase
+    inc dest_tbase
     bne @skip_base_msb
-    inc tbase+1
+    inc dest_tbase+1
 @skip_base_msb:
     ; decrement len
     lda tlen
@@ -325,11 +346,11 @@ parse_dataseg:
 
 @read_seg:
     jsr read_byte
-    sta (dbase)
+    sta (dest_dbase)
     ; increment base
-    inc dbase
+    inc dest_dbase
     bne @skip_base_msb
-    inc dbase+1
+    inc dest_dbase+1
 @skip_base_msb:
     ; decrement len
     lda dlen
