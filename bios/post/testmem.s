@@ -85,7 +85,7 @@ test_ram:
     ; start w/ last page in RAM
     lda #0
     sta PAGE_ADDR
-    lda #<((__RAM_BASE_SIZE__+__RAM_BIOS_SIZE__+__RAM_USER_SIZE__)/256-1)
+    lda #<(__RAM_SIZE__/256-1)
     sta PAGE_ADDR+1
 
     ; write data

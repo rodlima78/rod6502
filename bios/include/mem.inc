@@ -1,15 +1,7 @@
 ; memories
-.import __RAM_BASE_START__
-.import __RAM_BASE_SIZE__
-.import __RAM_BASE_LAST__
-
-.import __RAM_BIOS_START__
-.import __RAM_BIOS_SIZE__
-.import __RAM_BIOS_LAST__
-
-.import __RAM_USER_START__
-.import __RAM_USER_SIZE__
-.import __RAM_USER_LAST__
+.import __RAM_START__
+.import __RAM_SIZE__
+.import __RAM_LAST__
 
 .import __ROM_START__
 .import __ROM_SIZE__

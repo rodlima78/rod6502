@@ -1,7 +1,6 @@
 .include "cmd.inc"
 .include "acia.inc"
 
-.import __RAM_USER_START__
 .importzp app_loaded
 
 SOH = $01

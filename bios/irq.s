@@ -31,7 +31,7 @@ default_irq_handler:
     plx
     rti
 
-.segment "IRQ_TABLE"
+.data
 irq_table:
     .res 8*2 ; one address per IRQ line
 
