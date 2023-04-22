@@ -154,7 +154,7 @@ start_block:
 
     jsr acia_purge   ; no, empty recv channel
     jsr acia_put_const_string
-    .asciiz " FAILED\r\n"
+    .asciiz " FAILED"
     jmp cmd_loop
 
 @file_received:
@@ -162,14 +162,47 @@ start_block:
     lda #ACK
     jsr acia_put_char
 
+    ; if requested, zero out BSS
+    lda #%10
+    bit load_flags
+    beq @skip_zero_bss
+    jsr zero_bss
+
+@skip_zero_bss:
     jsr acia_put_const_string
-    .asciiz " OK\r\n"
+    .asciiz " OK"
     
     ; signal that app is now loaded
     lda #$FF
     sta app_loaded
 
     jmp cmd_loop
+
+zero_bss:
+    pha
+@loop:
+    ; exit loop when blen==0
+    lda blen
+    bne @skip_blen_msb
+    lda blen+1
+    beq @end
+    ; decrement blen
+    dec blen+1
+@skip_blen_msb:
+    dec blen
+    ; zero out memory
+    lda #0
+    sta (dest_bbase)
+    ; increment bbase for next byte to be zeroed out
+    inc dest_bbase
+    bne @skip_bbase_msb
+    inc dest_bbase+1
+@skip_bbase_msb:
+    bra @loop
+@end:
+
+    pla
+    rts
 
 ; return a: byte read
 read_byte:
@@ -280,7 +313,6 @@ parse_header:
     bra @read_header_option ; go read next header option
 
 @end_header:
-
     ; Start processing the text segment, it must be in the same block as header,
     ; headers must not be that long...
     lda #STATE_TEXTSEG
