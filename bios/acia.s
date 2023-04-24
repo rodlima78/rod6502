@@ -240,6 +240,7 @@ acia_get_char:
 acia_put_char:
     sta ACIA_DATA
     stz timeout_state ; so that interrupt handler won't using it
+    pha
 
     ; generate interrupt after 10 bits (1+8+1) are output (PB6 is bauds*16)
     lda #%00100000 ; Timer2 count down pulses on PB6
@@ -247,6 +248,7 @@ acia_put_char:
     lda #(10*16)
     sta VIA_T2CL
     stz VIA_T2CH ; start counter
+    pla
     wai          ; wait for interrupt
     rts
 

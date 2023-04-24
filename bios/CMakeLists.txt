@@ -17,6 +17,7 @@ add_executable(bios_rom
     irq.s
     acia.s
     mem.s
+    xmodem.s
     cmd.s
     cmd_load.s
     cmd_run.s
