@@ -3,8 +3,10 @@
 .include "mem.inc"
 .include "xmodem.inc"
 .include "lcd.inc"
+.include "sys.inc"
 
 .importzp app_loaded
+.import import_table
 
 SOH = $01
 EOT = $04
@@ -36,6 +38,11 @@ slen:  .res 2 ; stack length
 dest_tbase: .res 2
 dest_dbase: .res 2
 dest_bbase: .res 2
+
+num_imports: .res 2
+dest_imports: .res 2
+cur_src_import: .res 2
+cur_dst_import: .res 2
 
 ; ref: http://www.6502.org/users/andre/o65/fileformat.html
 
@@ -166,7 +173,7 @@ read_dataseg:
     lda dlen+1
     bne @read_seg ; no, seg not empty yet, read it
 
-    bra read_ignore
+    bra read_imports
 
 @read_seg:
     jsr xmodem_read_byte
@@ -184,12 +191,100 @@ read_dataseg:
     dec dlen
     bra read_dataseg
 
-    ; 4. ignore remaining data --------------------------------------
+    ; 4. parse import list --------------------------------------
+read_imports:
+    jsr xmodem_read_byte
+    sta num_imports
+    jsr xmodem_read_byte
+    sta num_imports+1
+
+    ; allocate memory for the import address mapping
+    ldx #num_imports
+    ldy #dest_imports
+    jsr sys_malloc
+    bne load_error
+    ; allocate twice the size, as each import slot holds one address (2 bytes)
+    ; Note: assuming allocation is contiguous w/ previous block.
+    ldy #cur_dst_import ; dummy
+    jsr sys_malloc
+    bne load_error
+
+    ; start filling up first import
+    lda dest_imports
+    sta cur_dst_import
+    lda dest_imports+1
+    sta cur_dst_import+1
+
+@read_next_import:
+    ; exit loop when num_imports==0
+    lda num_imports
+    bne @skip_msb3
+    lda num_imports+1
+    beq @end
+    ; decrement number of imports to be read
+    dec num_imports+1
+@skip_msb3:
+    dec num_imports
+
+    ; start search from first item of import table
+    lda #<import_table    
+    sta cur_src_import
+    lda #>import_table
+    sta cur_src_import+1
+
+    ldy #1  ; point to first character
+@find_newchar:
+    jsr xmodem_read_byte
+@find_char:
+    cmp (cur_src_import),y
+    bcc load_error       ; query < import ? not found
+    bne @try_next_import ; query > import ? try next
+    cmp #0               ; query == import, end of string? 
+    beq @found           ; yes, found it!
+    iny                  ; no, compare next char
+    bra @find_newchar
+
+@try_next_import:
+    pha                  ; save query char
+    ; increment cur_src_import
+    lda (cur_src_import) ; load stride
+    clc
+    adc cur_src_import   ; make cur_src_import point to next import
+    sta cur_src_import
+    bcc @skip_msb
+    inc cur_src_import+1
+@skip_msb:
+    pla             ; restore query char
+    bra @find_char
+
+@found:
+    ; Save the import address to the dst import table
+    iny
+    lda (cur_src_import),y
+    sta (cur_dst_import)
+    iny
+    lda (cur_src_import),y
+    ldy #1               ; we don't need y anymore, this is ok
+    sta (cur_dst_import),y
+
+    ; increment dest pointer
+    lda #2               ; import slot has 2 bytes
+    clc
+    adc cur_dst_import
+    sta cur_dst_import
+    bcc @skip_msb4
+    inc cur_dst_import+1
+@skip_msb4:
+    bra @read_next_import
+
+@end:
+
+    ; 5. ignore remaining data --------------------------------------
 read_ignore:
     jsr xmodem_skip_block
     beq read_ignore
-
-    ; 5. if requested, zero out BSS ------------------
+    
+    ; 6. if requested, zero out BSS ------------------
     lda #%10
     bit load_flags
     beq @skip_zero_bss
