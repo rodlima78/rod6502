@@ -323,8 +323,8 @@ segid_jumptable:
 
 ; expects typebyte|segID on top of stack
 segid_undefined:
-    ; point to start of import table
-    lda dest_imports
+    ; Read symbol index and make cur_dst_import point to its address
+    lda dest_imports    ; point to start of import table
     sta cur_dst_import
     lda dest_imports+1
     sta cur_dst_import+1
@@ -346,52 +346,16 @@ segid_undefined:
     adc cur_dst_import+1
     sta cur_dst_import+1
 
+    lda (cur_dst_import)
+    tax
+    ldy #1
+    lda (cur_dst_import),y
+    tay
+
     pla     ; pop typebyte|segID
-
-    bit #TYPE_WORD
-    bne @type_word
-    bit #TYPE_HIGH
-    bne @type_high
-    bit #TYPE_LOW
-    bne @type_low
-
-    jmp load_error
-
-@type_word:
-    ; load the word directly from the segment
-    ; and add the symbol address to the addr offset
-    lda (cur_rel)   ; read LSB
-    adc (cur_dst_import)
-    sta (cur_rel)
-    ldy #1
-    lda (cur_rel),y ; read MSB
-    adc (cur_dst_import),y
-    sta (cur_rel),y
-
-    jmp process_relocation ; go to next relocation
-
-@type_high:
-    lda #%1000000        ; page-wise reloc bit
-    bit load_flags       ; is it set?
-    clc                  ; keep carry reset in case doing page-wise reloc
-    bne @incr_msb        ; yes, use page-wise reloc (cold path)
-    jsr xmodem_read_byte ; no, read LSB (hot path)
-    adc (cur_dst_import) ; we're only interested in the carry
-@incr_msb:
-    lda (cur_rel)        ; read MSB from tseg
-    ldy #1
-    adc (cur_dst_import),y ; add import's MSB (including carry from LSB)
-    sta (cur_rel)        ; update tseg
-
-    jmp process_relocation ; go to next relocation
-
-@type_low:
-    lda (cur_rel)        ; read LSB
-    clc
-    adc (cur_dst_import) ; Add the symbol address to it (only LSB needed)
-    sta (cur_rel)        ; update with relocated address with LSB
-
-    jmp process_relocation ; go to next relocation
+    jsr relocate
+    beq process_relocation ; success? process next relocation
+    jmp load_error         ; or else, fail
 
 segid_absolute:
 segid_textseg:
@@ -464,6 +428,7 @@ zero_bss:
     pla
     rts
 
+; ===============================================
 ; x: zp ptr to dest data seg
 ; y: zp ptr to seg length
 parse_segdata:
@@ -502,3 +467,57 @@ parse_segdata:
 @skip_len_msb:
     dec len
     bra @copy_byte
+
+; ===============================================
+; a: reltype
+; y: MSB offset
+; x: LSB offset
+; cur_rel: pointer to data to be relocated
+relocate:
+    bit #TYPE_WORD
+    bne @type_word
+    bit #TYPE_HIGH
+    bne @type_high
+    bit #TYPE_LOW
+    bne @type_low
+
+    lda #1 ; error, type not known
+    rts
+
+@type_word:
+    ; load the word directly from the segment
+    ; and add the symbol address to the addr offset
+    txa             ; get offset LSB
+    adc (cur_rel)   ; add with data LSB
+    sta (cur_rel)   ; store relocated LSB
+    tya             ; get offset MSB
+    ldy #1
+    adc (cur_rel),y ; add with data MSB
+    sta (cur_rel),y ; store relocated MSB
+    lda #0          ; success
+    rts
+
+@type_high:
+    lda #%1000000        ; page-wise reloc bit
+    bit load_flags       ; is it set?
+    clc                  ; keep carry reset in case doing page-wise reloc
+    bne @_incr_msb       ; yes, use page-wise reloc (cold path)
+    jsr xmodem_read_byte ; no, read len_byte (hot path)
+    sta len
+    txa                  ; get offset LSB
+    adc len              ; add it to len_byte, only carry matters
+@_incr_msb:
+    tya                  ; get offset MSB
+    adc (cur_rel)        ; add with data MSB, including carry from LSB
+    sta (cur_rel)        ; store relocated MSB
+    lda #0               ; success
+    rts
+
+@type_low:
+    txa                  ; get offset LSB
+    clc
+    adc (cur_rel)        ; add data LSB
+    sta (cur_rel)        ; store relocated LSB (do not need MSB)
+    lda #0               ; success
+    rts
+
