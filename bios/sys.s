@@ -3,8 +3,13 @@
 
 .import cmd_loop
 .export import_table
+.import save_stack
 
 sys_exit:
+    ; restore stack
+    ldx save_stack
+    txs
+
     jmp cmd_loop
 
 .rodata

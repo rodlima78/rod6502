@@ -7,6 +7,7 @@
 
 .importzp app_loaded
 .import import_table
+.export save_stack
 
 SOH = $01
 EOT = $04
@@ -61,10 +62,17 @@ TYPE_LOW      = $20 ; LSB of an address
 TYPE_SEGADDR  = $C0 ; not used, 65816
 TYPE_SEG      = $A0 ; not used, 65816
 
+.data
+save_stack: .res 1
+
 ; ref: http://www.6502.org/users/andre/o65/fileformat.html
 
 .code
 cmd_load:
+    ; save stack pointer so that we can restore in case of errors
+    tsx
+    stx save_stack
+
     jsr acia_put_const_string
     .asciiz "Please initiate transfer..."
 
@@ -166,6 +174,10 @@ read_textseg:
 
 load_error:
     jsr xmodem_deinit
+    ; restore stack pointer
+    ldx save_stack
+    txs
+
     jmp cmd_loop
 
     ; 3. read data segment --------------------------------------
@@ -311,8 +323,7 @@ segid_jumptable:
     and #$0f                ; A=segID
     cmp #6                  ; index < 6?
     bcc @process_segid      ; yes, process segID
-    pla                     ; restore stack
-
+    ; no need to restore stack, load_error takes care of it
     jmp load_error          ; no, out of bounds: error
 
 @process_segid:
@@ -366,11 +377,9 @@ segid_textseg:
     sbc tbase+1
     tay
 do_relocate:
-    pla     ; pop typebyte|segID
+    pla                    ; pop typebyte|segID
     jsr relocate
-    bne @error
-    jmp process_relocation ; success? process next relocation
-@error:
+    beq process_relocation ; success? process next relocation
     jmp load_error         ; or else, fail
 
 segid_dataseg:
