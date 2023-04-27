@@ -36,6 +36,7 @@ zlen:  .res 2 ; zeropage length
 slen:  .res 2 ; stack length
 
 ptr: .res 2
+len: .res 2
 
 dest_tbase: .res 2
 dest_dbase: .res 2
@@ -157,34 +158,11 @@ cmd_load:
 
     ; 2. read text segment --------------------------------------
 read_textseg:
-    lda dest_tbase
-    sta ptr
-    lda dest_tbase+1
-    sta ptr+1
-
-@copy_byte:
-    lda tlen      ; reached end of segment?
-    bne @read_seg ; no, seg not empty yet, read it
-    lda tlen+1
-    bne @read_seg ; no, seg not empty yet, read it
-
+    ldx #dest_tbase
+    ldy #tlen
+    jsr parse_segdata
+    bne load_error
     bra read_dataseg
-
-@read_seg:
-    jsr xmodem_read_byte
-    sta (ptr)
-    ; increment base
-    inc ptr
-    bne @skip_base_msb
-    inc ptr+1
-@skip_base_msb:
-    ; decrement len
-    lda tlen
-    bne @skip_len_msb
-    dec tlen+1
-@skip_len_msb:
-    dec tlen
-    bra @copy_byte
 
 load_error:
     jsr xmodem_deinit
@@ -192,34 +170,10 @@ load_error:
 
     ; 3. read data segment --------------------------------------
 read_dataseg:
-    lda dest_dbase
-    sta ptr
-    lda dest_dbase+1
-    sta ptr+1
-
-@copy_byte:
-    lda dlen
-    bne @read_seg ; no, seg not empty yet, read it
-    lda dlen+1
-    bne @read_seg ; no, seg not empty yet, read it
-
-    bra read_imports
-
-@read_seg:
-    jsr xmodem_read_byte
-    sta (ptr)
-    ; increment base
-    inc ptr
-    bne @skip_base_msb
-    inc ptr+1
-@skip_base_msb:
-    ; decrement len
-    lda dlen
-    bne @skip_len_msb
-    dec dlen+1
-@skip_len_msb:
-    dec dlen
-    bra @copy_byte
+    ldx #dest_dbase
+    ldy #dlen
+    jsr parse_segdata
+    bne load_error
 
     ; 4. parse import list --------------------------------------
 read_imports:
@@ -510,3 +464,41 @@ zero_bss:
     pla
     rts
 
+; x: zp ptr to dest data seg
+; y: zp ptr to seg length
+parse_segdata:
+    ; load ptr to dest data buffer
+    lda 0,x
+    sta ptr
+    lda 1,x
+    sta ptr+1
+
+    ; load ptr to seg length
+    lda 1,y
+    sta len+1
+    lda 0,y
+    sta len
+
+@copy_byte:
+    lda len      ; reached end of segment?
+    bne @read_seg ; no, seg not empty yet, read it
+    lda len+1
+    bne @read_seg ; no, seg not empty yet, read it
+
+    rts ; OK: Z==1
+
+@read_seg:
+    jsr xmodem_read_byte
+    sta (ptr)
+    ; increment base
+    inc ptr
+    bne @skip_base_msb
+    inc ptr+1
+@skip_base_msb:
+    ; decrement len
+    lda len
+    bne @skip_len_msb
+    dec len+1
+@skip_len_msb:
+    dec len
+    bra @copy_byte
