@@ -24,7 +24,7 @@ retries: .res 1
 
 ; o65 header data
 seg_align: .res 1
-load_flags: .res 1 ; CPU(7),reloc(6),size(5),obj(4),simple(3),chain(2),bsszero(1)
+load_flags: .res 1 ; CPU(7),reloc(6),size(5),obj(4),simple(3),chain(2),bsszero(1),nd(0)
 tbase: .res 2 ; original text base address
 tlen:  .res 2 ; text length
 dbase: .res 2 ; original data base address
@@ -45,6 +45,20 @@ num_imports: .res 2
 dest_imports: .res 2
 cur_src_import: .res 2
 cur_dst_import: .res 2
+cur_rel: .res 2
+
+SEGID_UNDEFINED = 0
+SEGID_ABSOLUTE  = 1
+SEGID_TEXTSEG   = 2
+SEGID_DATASEG   = 3
+SEGID_BSS       = 4
+SEGID_ZEROPAGE  = 5
+
+TYPE_WORD     = $80 ; 2 byte address
+TYPE_HIGH     = $40 ; MSB of an address
+TYPE_LOW      = $20 ; LSB of an address
+TYPE_SEGADDR  = $C0 ; not used, 65816
+TYPE_SEG      = $A0 ; not used, 65816
 
 ; ref: http://www.6502.org/users/andre/o65/fileformat.html
 
@@ -295,12 +309,160 @@ read_imports:
 
 @end:
 
-    ; 5. ignore remaining data --------------------------------------
+    ; 5. do text relocation --------------------------------------
+read_textrel:
+    ; start at tbase
+    ldx dest_tbase+1
+    lda dest_tbase
+    ; decrement it, as relocation starts at tbase-1
+    bne @skip_msb
+    dex
+@skip_msb:
+    dea
+    sta cur_rel
+    stx cur_rel+1
+
+process_relocation:
+    jsr xmodem_read_byte ; get offset byte
+    bne @do_reloc      ; not zero ? do relocation
+    jmp end_reloc      ; zero? no more relocations
+@do_reloc:
+    ; add offset byte to cur_rel pointer
+    pha
+    cmp #255
+    bne @add_offset
+    dea
+@add_offset:
+    clc
+    adc cur_rel
+    sta cur_rel
+    bcc @skip_msb
+    inc cur_rel+1
+@skip_msb:
+    pla
+    cmp #255               ; byte == 255?
+    beq process_relocation ; yes, add next byte
+
+.rodata
+segid_jumptable:
+    .addr segid_undefined
+    .addr segid_absolute
+    .addr segid_textseg
+    .addr segid_dataseg
+    .addr segid_bss
+    .addr segid_zeropage
+.code
+    jsr xmodem_read_byte    ; read typebyte|segID
+    pha
+    and #$0f                ; A=segID
+    cmp #6                  ; index < 6?
+    bcc @process_segid      ; yes, process segID
+    pla                     ; restore stack
+
+    jmp load_error          ; no, out of bounds: error
+
+@process_segid:
+    asl             ; A = segID*2: index into jumptable
+    tax
+    ; typebyte|segID remains on top of stack
+    jmp (segid_jumptable,x)
+
+; expects typebyte|segID on top of stack
+segid_undefined:
+    ; point to start of import table
+    lda dest_imports
+    sta cur_dst_import
+    lda dest_imports+1
+    sta cur_dst_import+1
+
+    ; add index*2 (as table slot size is 2 bytes)
+    jsr xmodem_read_byte ; read index LSB
+    asl ; *2
+    php ; save carry bit
+    clc
+    adc cur_dst_import  ; add to ptr LSB
+    sta cur_dst_import
+    bcc @skip_msb
+    inc cur_dst_import+1
+@skip_msb:
+    jsr xmodem_read_byte ; read index MSB
+    plp ; restore carry bit from LSB*2
+    rol ; *2, and include carry bit from LSB*2
+    ; clc must not have carry bit. If set, we'll have unavoidable problems.
+    adc cur_dst_import+1
+    sta cur_dst_import+1
+
+    pla     ; pop typebyte|segID
+
+    bit #TYPE_WORD
+    bne @type_word
+    bit #TYPE_HIGH
+    bne @type_high
+    bit #TYPE_LOW
+    bne @type_low
+
+    jmp load_error
+
+@type_word:
+    ; load the word directly from the segment
+    ; and add the symbol address to the addr offset
+    lda (cur_rel)   ; read LSB
+    adc (cur_dst_import)
+    sta (cur_rel)
+    ldy #1
+    lda (cur_rel),y ; read MSB
+    adc (cur_dst_import),y
+    sta (cur_rel),y
+
+    jmp process_relocation ; go to next relocation
+
+@type_high:
+    lda #%1000000        ; page-wise reloc bit
+    bit load_flags       ; is it set?
+    clc                  ; keep carry reset in case doing page-wise reloc
+    bne @incr_msb        ; yes, use page-wise reloc (cold path)
+    jsr xmodem_read_byte ; no, read LSB (hot path)
+    adc (cur_dst_import) ; we're only interested in the carry
+@incr_msb:
+    lda (cur_rel)        ; read MSB from tseg
+    ldy #1
+    adc (cur_dst_import),y ; add import's MSB (including carry from LSB)
+    sta (cur_rel)        ; update tseg
+
+    jmp process_relocation ; go to next relocation
+
+@type_low:
+    lda (cur_rel)        ; read LSB
+    clc
+    adc (cur_dst_import) ; Add the symbol address to it (only LSB needed)
+    sta (cur_rel)        ; update with relocated address with LSB
+
+    jmp process_relocation ; go to next relocation
+
+segid_absolute:
+segid_textseg:
+segid_dataseg:
+segid_bss:
+segid_zeropage:
+    pla
+    
+    bit #TYPE_HIGH
+    beq @jmp_error
+    lda #%1000000      ; page-wise reloc bit
+    bit load_flags     ; is it set?
+    bne @jmp_error     ; no, use bytewire reloc (hot path)
+    jsr xmodem_read_byte ; swallow low_byte
+@jmp_error:
+    jmp process_relocation
+
+end_reloc:
+
+    ; 6. ignore remaining data --------------------------------------
 read_ignore:
     jsr xmodem_skip_block
     beq read_ignore
     
-    ; 6. if requested, zero out BSS ------------------
+    ; 7. if requested, zero out BSS ------------------
     lda #%10
     bit load_flags
     beq @skip_zero_bss
