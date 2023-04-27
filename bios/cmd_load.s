@@ -357,11 +357,54 @@ segid_undefined:
     beq process_relocation ; success? process next relocation
     jmp load_error         ; or else, fail
 
-segid_absolute:
 segid_textseg:
+    sec
+    lda dest_tbase
+    sbc tbase
+    tax
+    lda dest_tbase+1
+    sbc tbase+1
+    tay
+do_relocate:
+    pla     ; pop typebyte|segID
+    jsr relocate
+    bne @error
+    jmp process_relocation ; success? process next relocation
+@error:
+    jmp load_error         ; or else, fail
+
 segid_dataseg:
+    sec
+    lda dest_dbase
+    sbc dbase
+    tax
+    lda dest_dbase+1
+    sbc dbase+1
+    tay
+    bra do_relocate
+
 segid_bss:
+    sec
+    lda dest_bbase
+    sbc bbase
+    tax
+    lda dest_bbase+1
+    sbc bbase+1
+    tay
+    bra do_relocate
+
 segid_zeropage:
+    sec
+    lda #0      ; dest_zbase
+    sbc bbase
+    tax
+    lda #0      ; dest_zbase+1
+    sbc bbase+1
+    tay
+
+    bra do_relocate
+
+segid_absolute:
     pla
     
     bit #TYPE_HIGH
