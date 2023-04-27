@@ -35,6 +35,8 @@ zbase: .res 2 ; original zeropage base address
 zlen:  .res 2 ; zeropage length
 slen:  .res 2 ; stack length
 
+ptr: .res 2
+
 dest_tbase: .res 2
 dest_dbase: .res 2
 dest_bbase: .res 2
@@ -66,7 +68,9 @@ cmd_load:
 @loop_magic:
     jsr xmodem_read_byte
     cmp @marker,y
-    bne load_error
+    beq @magic_ok
+    jmp load_error
+@magic_ok:
     iny
     cpy #(.sizeof(@marker)+.sizeof(@magic)+.sizeof(@version))
     bne @loop_magic
@@ -139,6 +143,12 @@ cmd_load:
 
     ; 2. read text segment --------------------------------------
 read_textseg:
+    lda dest_tbase
+    sta ptr
+    lda dest_tbase+1
+    sta ptr+1
+
+@copy_byte:
     lda tlen      ; reached end of segment?
     bne @read_seg ; no, seg not empty yet, read it
     lda tlen+1
@@ -148,11 +158,11 @@ read_textseg:
 
 @read_seg:
     jsr xmodem_read_byte
-    sta (dest_tbase)
+    sta (ptr)
     ; increment base
-    inc dest_tbase
+    inc ptr
     bne @skip_base_msb
-    inc dest_tbase+1
+    inc ptr+1
 @skip_base_msb:
     ; decrement len
     lda tlen
@@ -160,7 +170,7 @@ read_textseg:
     dec tlen+1
 @skip_len_msb:
     dec tlen
-    bra read_textseg
+    bra @copy_byte
 
 load_error:
     jsr xmodem_deinit
@@ -168,6 +178,12 @@ load_error:
 
     ; 3. read data segment --------------------------------------
 read_dataseg:
+    lda dest_dbase
+    sta ptr
+    lda dest_dbase+1
+    sta ptr+1
+
+@copy_byte:
     lda dlen
     bne @read_seg ; no, seg not empty yet, read it
     lda dlen+1
@@ -177,11 +193,11 @@ read_dataseg:
 
 @read_seg:
     jsr xmodem_read_byte
-    sta (dest_dbase)
+    sta (ptr)
     ; increment base
-    inc dest_dbase
+    inc ptr
     bne @skip_base_msb
-    inc dest_dbase+1
+    inc ptr+1
 @skip_base_msb:
     ; decrement len
     lda dlen
@@ -189,7 +205,7 @@ read_dataseg:
     dec dlen+1
 @skip_len_msb:
     dec dlen
-    bra read_dataseg
+    bra @copy_byte
 
     ; 4. parse import list --------------------------------------
 read_imports:
@@ -303,6 +319,11 @@ read_ignore:
     jmp cmd_loop
 
 zero_bss:
+    lda dest_bbase
+    sta ptr
+    lda dest_bbase+1
+    sta ptr+1
+
     pha
 @loop:
     ; exit loop when blen==0
@@ -316,11 +337,11 @@ zero_bss:
     dec blen
     ; zero out memory
     lda #0
-    sta (dest_bbase)
+    sta (ptr)
     ; increment bbase for next byte to be zeroed out
-    inc dest_bbase
+    inc ptr
     bne @skip_bbase_msb
-    inc dest_bbase+1
+    inc ptr+1
 @skip_bbase_msb:
     bra @loop
 @end:
