@@ -44,7 +44,7 @@ xmodem_init:
 
 start_block:
     ; start receiving block
-    lda #10           ; 10s timeout
+    lda #3            ; 3s timeout (spec says it must be 10s)
     jsr acia_get_char ; get start-of-header or end-of-transfer
     bne xmodem_error
     cmp #EOT            ; end of transfer?
