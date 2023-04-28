@@ -23,6 +23,7 @@ import_table:
     ; must be sorted in ascii order
     defsymbol LCD_MSGBASE
     defsymbol lcd_hex
+    defsymbol lcd_printchar
     defsymbol lcd_string
     defsymbol sys_exit
     .byte 0 ; end-of-table
