@@ -370,7 +370,7 @@ segid_jumptable:
     .addr segid_generic ; zeropage
 .code
     jsr xmodem_read_byte    ; read typebyte|segID
-    pha                     ; push it to stack, it's the relocate fn parameter
+    pha                     ; push it to stack
     and #$0f                ; A=segID
     cmp #6                  ; index < 6?
     bcc @process_segid      ; yes, process segID
@@ -380,11 +380,18 @@ segid_jumptable:
 @process_segid:
     asl             ; A = segID*2: index into jumptable
     tax
-    ; typebyte|segID remains on top of stack
+    pla             ; restore typebyte|segID
+
+    ; emulate indirect jsr, returning to process_relocation
+    ldy #>(process_relocation-1)
+    phy
+    ldy #<(process_relocation-1)
+    phy
     jmp (segid_jumptable,x)
 
-; expects typebyte|segID on top of stack
 segid_undefined:
+    pha ; save typebyte|segID
+
     ; Read symbol index and make cur_dst_import point to its address
     lda dest_imports    ; point to start of import table
     sta cur_dst_import
@@ -414,10 +421,10 @@ segid_undefined:
     lda (cur_dst_import),y
     tay
     pla  ; restore typebyte|segID
-    jsr relocate
-    bra process_relocation
+    jmp relocate ; tail call optimization
 
 segid_generic:
+    pha ; save typebyte|segID
     ; X is segID*2
     txa
     sec
@@ -438,12 +445,9 @@ segid_generic:
     pla  ; restore offset LSB
     tax  ; and assign it to X
     pla  ; restore typebyte|segID
-    jsr relocate
-    bra process_relocation
+    jmp relocate ; tail call optimization
 
 segid_absolute:
-    pla
-    
     bit #TYPE_HIGH
     beq @jmp_error
     lda #%1000000      ; page-wise reloc bit
@@ -451,7 +455,7 @@ segid_absolute:
     bne @jmp_error     ; no, use bytewire reloc (hot path)
     jsr xmodem_read_byte ; swallow low_byte
 @jmp_error:
-    jmp process_relocation
+    rts
 
 
 ; ===============================================
