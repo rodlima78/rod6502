@@ -413,7 +413,9 @@ segid_undefined:
     ldy #1
     lda (cur_dst_import),y
     tay
-    bra relocate
+    pla  ; restore typebyte|segID
+    jsr relocate
+    bra process_relocation
 
 segid_generic:
     ; X is segID*2
@@ -435,7 +437,9 @@ segid_generic:
     tay  ; assign offset MSB to Y
     pla  ; restore offset LSB
     tax  ; and assign it to X
-    bra relocate
+    pla  ; restore typebyte|segID
+    jsr relocate
+    bra process_relocation
 
 segid_absolute:
     pla
@@ -492,12 +496,11 @@ parse_segdata:
 
 ; ===============================================
 ; stack: typebyte|segID
+; a: typebyte|segID
 ; y: MSB offset
 ; x: LSB offset
 ; cur_rel: pointer to data to be relocated
 relocate:
-    pla     ; pop typebyte|segID
-
     bit #TYPE_WORD
     bne @type_word
     bit #TYPE_HIGH
@@ -518,7 +521,7 @@ relocate:
     ldy #1
     adc (cur_rel),y ; add with data MSB (and carry of LSB)
     sta (cur_rel),y ; store relocated MSB
-    jmp process_relocation
+    rts
 
 @type_high:
     lda #%1000000        ; page-wise reloc bit
@@ -533,14 +536,14 @@ relocate:
     tya                  ; get offset MSB
     adc (cur_rel)        ; add with data MSB, including carry from LSB
     sta (cur_rel)        ; store relocated MSB
-    jmp process_relocation
+    rts
 
 @type_low:
     txa                  ; get offset LSB
     clc
     adc (cur_rel)        ; add data LSB
     sta (cur_rel)        ; store relocated LSB (do not need MSB)
-    jmp process_relocation
+    rts
 
 
 ; =============================================
