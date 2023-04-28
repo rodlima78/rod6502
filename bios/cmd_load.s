@@ -2,7 +2,6 @@
 .include "acia.inc"
 .include "mem.inc"
 .include "xmodem.inc"
-.include "lcd.inc"
 .include "sys.inc"
 
 .importzp app_loaded
@@ -15,7 +14,7 @@ ACK = $06
 NAK = $15
 CAN = $18
 
-.zeropage
+.segment "ZPTMP": zeropage
 next_block: .res 1
 next_data_in_block: .res 1 ; index of next data to be read in block
 
@@ -75,9 +74,11 @@ cmd_load:
     tsx
     stx save_stack
 
-    ; app can use all zeropage
-    stz dest_zbase
-    stz dest_zbase+1
+    ; app zp starts where bios' ends
+    lda #<__ZEROPAGE_SIZE__
+    sta dest_zbase
+    lda #>__ZEROPAGE_SIZE__
+    sta dest_zbase+1
 
     jsr acia_put_const_string
     .asciiz "Please initiate transfer..."
@@ -183,7 +184,6 @@ load_error:
     ; restore stack pointer
     ldx save_stack
     txs
-
     jmp cmd_loop
 
     ; 3. read data segment --------------------------------------
@@ -443,7 +443,7 @@ segid_generic:
     asl
     tay ; Y: index to base (stride=4, starts at text segID)
 
-    ; offset = dest.tbase-orig.tbase
+    ; offset = dest.base-orig.base
     lda dest_tbase,x
     sec
     sbc tbase,y

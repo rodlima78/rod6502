@@ -30,7 +30,7 @@ CMD_RUN   = 1
 STR_LOAD: .asciiz "load"
 STR_RUN: .asciiz "run"
 
-.zeropage
+.segment "ZPTMP": zeropage
 CMD_BUFFER: .res 8
 
 .code

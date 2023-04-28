@@ -9,7 +9,7 @@
 .import after_test_stack
 .importzp STATUS_STR
 
-.zeropage
+.segment "ZPTMP": zeropage
 PAGE_ADDR: .res 1
 ERROR_ADDR: .res 5
 

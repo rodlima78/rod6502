@@ -6,7 +6,7 @@
 .import irq_table
 .export test_irq
 
-.zeropage
+.segment "ZPTMP": zeropage
 TEST_STATUS: .res 1
 
 .rodata

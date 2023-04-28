@@ -11,7 +11,7 @@ ACK = $06
 NAK = $15
 CAN = $18
 
-.zeropage
+.segment "ZPTMP": zeropage
 next_block: .res 1
 next_data_in_block: .res 1 ; index of next data to be read in block
 

@@ -28,7 +28,7 @@ STR_TEST_IRQ:  .asciiz "I"
 STR_TEST_OK:   .asciiz "OK"
 STR_TEST_FAIL: .asciiz "FAIL"
 
-.zeropage
+.segment "ZPTMP": zeropage
 ; these must be on zero page to avoid being garbled by memory tests
 ; we take care of them when testing zp
 POST_STAGE: .res 1

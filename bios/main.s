@@ -12,7 +12,7 @@
 
 .export app_loaded
 
-.zeropage
+.segment "ZPTMP": zeropage
 app_loaded: .res 1
 
 .code
