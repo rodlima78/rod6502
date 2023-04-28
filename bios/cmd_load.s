@@ -276,22 +276,84 @@ read_imports:
 @end:
 
     ; 5. do text relocation --------------------------------------
-read_textrel:
+    ldx #dest_tbase
+    jsr read_segrel
+
+    ; 6. do data relocation --------------------------------------
+    ldx #dest_dbase
+    jsr read_segrel
+
+    ; 8. ignore remaining data --------------------------------------
+read_ignore:
+    jsr xmodem_skip_block
+    beq read_ignore
+    
+    ; 9. if requested, zero out BSS ------------------
+    lda #%10
+    bit load_flags
+    beq @skip_zero_bss
+    jsr zero_bss
+
+@skip_zero_bss:
+    jsr acia_put_const_string
+    .asciiz " OK"
+    
+    ; signal that app is now loaded
+    lda #$FF
+    sta app_loaded
+
+    jsr xmodem_deinit
+
+    jmp cmd_loop
+
+zero_bss:
+    lda dest_bbase
+    sta ptr
+    lda dest_bbase+1
+    sta ptr+1
+
+    pha
+@loop:
+    ; exit loop when blen==0
+    lda blen
+    bne @skip_blen_msb
+    lda blen+1
+    beq @end
+    ; decrement blen
+    dec blen+1
+@skip_blen_msb:
+    dec blen
+    ; zero out memory
+    lda #0
+    sta (ptr)
+    ; increment bbase for next byte to be zeroed out
+    inc ptr
+    bne @skip_bbase_msb
+    inc ptr+1
+@skip_bbase_msb:
+    bra @loop
+@end:
+    pla
+    rts
+
+; ===============================================
+; x: zp ptr to dest seg
+read_segrel:
     ; start at tbase
-    ldx dest_tbase+1
-    lda dest_tbase
-    ; decrement it, as relocation starts at tbase-1
+    ldy 1,x
+    lda 0,x
+    ; decrement it, as relocation starts at base-1
     bne @skip_msb
-    dex
+    dey
 @skip_msb:
     dea
     sta cur_rel
-    stx cur_rel+1
+    sty cur_rel+1
 
 process_relocation:
     jsr xmodem_read_byte ; get offset byte
     bne @do_reloc      ; not zero ? do relocation
-    jmp end_reloc      ; zero? no more relocations
+    rts                ; zero? no more relocations
 @do_reloc:
     ; add offset byte to cur_rel pointer
     pha
@@ -362,11 +424,7 @@ segid_undefined:
     ldy #1
     lda (cur_dst_import),y
     tay
-
-    pla     ; pop typebyte|segID
-    jsr relocate
-    beq process_relocation ; success? process next relocation
-    jmp load_error         ; or else, fail
+    bra relocate
 
 segid_textseg:
     sec
@@ -376,11 +434,7 @@ segid_textseg:
     lda dest_tbase+1
     sbc tbase+1
     tay
-do_relocate:
-    pla                    ; pop typebyte|segID
-    jsr relocate
-    beq process_relocation ; success? process next relocation
-    jmp load_error         ; or else, fail
+    bra relocate
 
 segid_dataseg:
     sec
@@ -390,7 +444,7 @@ segid_dataseg:
     lda dest_dbase+1
     sbc dbase+1
     tay
-    bra do_relocate
+    bra relocate
 
 segid_bss:
     sec
@@ -400,7 +454,7 @@ segid_bss:
     lda dest_bbase+1
     sbc bbase+1
     tay
-    bra do_relocate
+    bra relocate
 
 segid_zeropage:
     sec
@@ -410,8 +464,7 @@ segid_zeropage:
     lda #0      ; dest_zbase+1
     sbc bbase+1
     tay
-
-    bra do_relocate
+    bra relocate
 
 segid_absolute:
     pla
@@ -425,60 +478,6 @@ segid_absolute:
 @jmp_error:
     jmp process_relocation
 
-end_reloc:
-
-    ; 6. ignore remaining data --------------------------------------
-read_ignore:
-    jsr xmodem_skip_block
-    beq read_ignore
-    
-    ; 7. if requested, zero out BSS ------------------
-    lda #%10
-    bit load_flags
-    beq @skip_zero_bss
-    jsr zero_bss
-
-@skip_zero_bss:
-    jsr acia_put_const_string
-    .asciiz " OK"
-    
-    ; signal that app is now loaded
-    lda #$FF
-    sta app_loaded
-
-    jsr xmodem_deinit
-
-    jmp cmd_loop
-
-zero_bss:
-    lda dest_bbase
-    sta ptr
-    lda dest_bbase+1
-    sta ptr+1
-
-    pha
-@loop:
-    ; exit loop when blen==0
-    lda blen
-    bne @skip_blen_msb
-    lda blen+1
-    beq @end
-    ; decrement blen
-    dec blen+1
-@skip_blen_msb:
-    dec blen
-    ; zero out memory
-    lda #0
-    sta (ptr)
-    ; increment bbase for next byte to be zeroed out
-    inc ptr
-    bne @skip_bbase_msb
-    inc ptr+1
-@skip_bbase_msb:
-    bra @loop
-@end:
-    pla
-    rts
 
 ; ===============================================
 ; x: zp ptr to dest data seg
@@ -521,11 +520,13 @@ parse_segdata:
     bra @copy_byte
 
 ; ===============================================
-; a: reltype
+; stack: typebyte|segID
 ; y: MSB offset
 ; x: LSB offset
 ; cur_rel: pointer to data to be relocated
 relocate:
+    pla     ; pop typebyte|segID
+
     bit #TYPE_WORD
     bne @type_word
     bit #TYPE_HIGH
@@ -533,21 +534,20 @@ relocate:
     bit #TYPE_LOW
     bne @type_low
 
-    lda #1 ; error, type not known
-    rts
+    jmp load_error
 
 @type_word:
     ; load the word directly from the segment
     ; and add the symbol address to the addr offset
     txa             ; get offset LSB
+    clc
     adc (cur_rel)   ; add with data LSB
     sta (cur_rel)   ; store relocated LSB
     tya             ; get offset MSB
     ldy #1
-    adc (cur_rel),y ; add with data MSB
+    adc (cur_rel),y ; add with data MSB (and carry of LSB)
     sta (cur_rel),y ; store relocated MSB
-    lda #0          ; success
-    rts
+    jmp process_relocation
 
 @type_high:
     lda #%1000000        ; page-wise reloc bit
@@ -563,13 +563,12 @@ relocate:
     adc (cur_rel)        ; add with data MSB, including carry from LSB
     sta (cur_rel)        ; store relocated MSB
     lda #0               ; success
-    rts
+    jmp process_relocation
 
 @type_low:
     txa                  ; get offset LSB
     clc
     adc (cur_rel)        ; add data LSB
     sta (cur_rel)        ; store relocated LSB (do not need MSB)
-    lda #0               ; success
-    rts
+    jmp process_relocation
 
