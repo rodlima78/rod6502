@@ -1,6 +1,8 @@
 .include "sys.inc"
 .include "lcd.inc"
 
+.export main
+
 .rodata
 HELLO: .asciiz "Hello, world!"
 

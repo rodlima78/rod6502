@@ -7,6 +7,7 @@
 .importzp app_loaded
 .import import_table
 .export save_stack
+.export ptr_app_entrypoint
 
 SOH = $01
 EOT = $04
@@ -67,6 +68,18 @@ TYPE_SEG      = $A0 ; not used, 65816
 
 .data
 save_stack: .res 1
+ptr_app_entrypoint: .res 2
+
+.rodata
+.macro def_global_symbol name, sym
+    .byte 1+.strlen(.string(name))+1+2
+    .asciiz .string(name)
+    .addr sym
+.endmacro
+app_globals_table:
+    ; must be sorted in ascii order
+    def_global_symbol main, ptr_app_entrypoint
+    .byte 0 ; end-of-table
 
 ; ref: http://www.6502.org/users/andre/o65/fileformat.html
 
@@ -75,6 +88,10 @@ cmd_load:
     ; save stack pointer so that we can restore in case of errors
     tsx
     stx save_stack
+
+    ; No entry point defined (so far)
+    stz ptr_app_entrypoint
+    stz ptr_app_entrypoint+1
 
     ; app zp starts where bios' ends
     lda #<__ZEROPAGE_SIZE__
@@ -271,12 +288,81 @@ read_datarel:
     ldx #dest_dbase
     jsr read_segrel
 
-    ; 8. ignore remaining data --------------------------------------
-read_ignore:
+    ; 7. read exported globals list ------------------------------
+read_exported_globals_list:
+    ; receive number of exports to read
+    jsr xmodem_read_byte
+    sta len 
+    jsr xmodem_read_byte
+    sta len+1
+
+    ; set up the stringlist processing to
+    ; find the global exports we understand from
+    ; 'app_globals_table', and update their symbol address
+    ; with data from o65.
+    lda #<app_globals_table
+    sta strlist
+    lda #>app_globals_table
+    sta strlist+1
+
+    lda #<@item_found
+    sta cb_found
+    lda #>@item_found
+    sta cb_found+1
+
+    lda #<@item_not_found
+    sta cb_not_found
+    lda #>@item_not_found
+    sta cb_not_found+1
+
+    jsr process_stringlist
+
+    bra o65_finished
+
+@item_found:
+    ; Use our relocation function to write the final symbol addres
+    ; to the address in the table
+    jsr xmodem_read_byte ; read the segment id
+    asl
+    tax                  ; X = segID*2, needed by segid_generic
+
+    lsr                  ; back to segID
+    ora #$80             ; make it a WORD relocation
+    pha                  ; save typebyte|segID
+
+    ; set the address to be relocated
+    lda (ptr),y
+    sta cur_rel
+    iny
+    lda (ptr),y
+    sta cur_rel+1
+
+    ; Initialize it with the src address
+    jsr xmodem_read_byte ; read src addr LSB
+    sta (cur_rel)        ; save it
+    jsr xmodem_read_byte ; read src addr MSB
+    ldy #1
+    sta (cur_rel),y      ; save it
+
+    ; Relocate the address
+    pla ; restore typebyte|segID
+    jmp segid_generic   ; tail call optimization
+
+@item_not_found:
+@loop:
+    jsr xmodem_read_byte
+    bne @loop  ; read till end of string
+    jsr xmodem_read_byte ; swallow segid
+    jsr xmodem_read_byte ; swallow addr LSB
+    jsr xmodem_read_byte ; swallow addr LSB
+
+    rts ; will process next item
+
+o65_finished:
     jsr xmodem_skip_block
-    beq read_ignore
-    
-    ; 9. if requested, zero out BSS ------------------
+    beq o65_finished   ; skip all remaining blocks
+    jsr xmodem_deinit
+
     lda #%10
     bit load_flags
     beq @skip_zero_bss
@@ -289,8 +375,6 @@ read_ignore:
     ; signal that app is now loaded
     lda #$FF
     sta app_loaded
-
-    jsr xmodem_deinit
 
     jmp cmd_loop
 
@@ -376,7 +460,6 @@ segid_jumptable:
     bcc @process_segid      ; yes, process segID
     ; no need to restore stack, load_error takes care of it
     jmp load_error          ; no, out of bounds: error
-
 @process_segid:
     asl             ; A = segID*2: index into jumptable
     tax
@@ -448,13 +531,14 @@ segid_generic:
     jmp relocate ; tail call optimization
 
 segid_absolute:
+    ; don't relocate anything
     bit #TYPE_HIGH
-    beq @jmp_error
+    beq @end
     lda #%1000000      ; page-wise reloc bit
     bit load_flags     ; is it set?
-    bne @jmp_error     ; no, use bytewire reloc (hot path)
+    bne @end           ; no, use bytewire reloc (hot path)
     jsr xmodem_read_byte ; swallow low_byte
-@jmp_error:
+@end:
     rts
 
 
