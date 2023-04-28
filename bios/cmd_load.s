@@ -344,9 +344,13 @@ read_exported_globals_list:
     ldy #1
     sta (cur_rel),y      ; save it
 
-    ; Relocate the address
     pla ; restore typebyte|segID
-    jmp segid_generic   ; tail call optimization
+
+    cpx #SEGID_ABSOLUTE*2   ; address is absolute? (x==segid*2)
+    beq @dont_relocate      ; yes, do not relocate 
+    jmp segid_generic       ; no, Relocate the address (tail call optimization)
+@dont_relocate:
+    rts
 
 @item_not_found:
 @loop:
@@ -355,7 +359,6 @@ read_exported_globals_list:
     jsr xmodem_read_byte ; swallow segid
     jsr xmodem_read_byte ; swallow addr LSB
     jsr xmodem_read_byte ; swallow addr LSB
-
     rts ; will process next item
 
 o65_finished:
