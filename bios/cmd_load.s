@@ -39,9 +39,11 @@ slen:  .res 2 ; stack length
 ptr: .res 2
 len: .res 2
 
+; must have same order as segs in o65 header
 dest_tbase: .res 2
 dest_dbase: .res 2
 dest_bbase: .res 2
+dest_zbase: .res 2
 
 num_imports: .res 2
 dest_imports: .res 2
@@ -72,6 +74,10 @@ cmd_load:
     ; save stack pointer so that we can restore in case of errors
     tsx
     stx save_stack
+
+    ; app can use all zeropage
+    stz dest_zbase
+    stz dest_zbase+1
 
     jsr acia_put_const_string
     .asciiz "Please initiate transfer..."
@@ -306,6 +312,7 @@ read_ignore:
 
     jmp cmd_loop
 
+; ===============================================
 zero_bss:
     lda dest_bbase
     sta ptr
@@ -375,13 +382,13 @@ process_relocation:
 segid_jumptable:
     .addr segid_undefined
     .addr segid_absolute
-    .addr segid_textseg
-    .addr segid_dataseg
-    .addr segid_bss
-    .addr segid_zeropage
+    .addr segid_generic ; text
+    .addr segid_generic ; data
+    .addr segid_generic ; bss
+    .addr segid_generic ; zeropage
 .code
     jsr xmodem_read_byte    ; read typebyte|segID
-    pha
+    pha                     ; push it to stack, it's the relocate fn parameter
     and #$0f                ; A=segID
     cmp #6                  ; index < 6?
     bcc @process_segid      ; yes, process segID
@@ -426,44 +433,26 @@ segid_undefined:
     tay
     bra relocate
 
-segid_textseg:
+segid_generic:
+    ; X is segID*2
+    txa
     sec
-    lda dest_tbase
-    sbc tbase
-    tax
-    lda dest_tbase+1
-    sbc tbase+1
-    tay
-    bra relocate
+    sbc #4 ; skip undefined and absolute segIDs
+    tax ; X: index to dest_base (stride=2, starts at text segID)
+    clc
+    asl
+    tay ; Y: index to base (stride=4, starts at text segID)
 
-segid_dataseg:
+    ; offset = dest.tbase-orig.tbase
+    lda dest_tbase,x
     sec
-    lda dest_dbase
-    sbc dbase
-    tax
-    lda dest_dbase+1
-    sbc dbase+1
-    tay
-    bra relocate
-
-segid_bss:
-    sec
-    lda dest_bbase
-    sbc bbase
-    tax
-    lda dest_bbase+1
-    sbc bbase+1
-    tay
-    bra relocate
-
-segid_zeropage:
-    sec
-    lda #0      ; dest_zbase
-    sbc bbase
-    tax
-    lda #0      ; dest_zbase+1
-    sbc bbase+1
-    tay
+    sbc tbase,y
+    pha  ; save offset LSB
+    lda dest_tbase+1,x
+    sbc tbase+1,y
+    tay  ; assign offset MSB to Y
+    pla  ; restore offset LSB
+    tax  ; and assign it to X
     bra relocate
 
 segid_absolute:
@@ -562,7 +551,6 @@ relocate:
     tya                  ; get offset MSB
     adc (cur_rel)        ; add with data MSB, including carry from LSB
     sta (cur_rel)        ; store relocated MSB
-    lda #0               ; success
     jmp process_relocation
 
 @type_low:
