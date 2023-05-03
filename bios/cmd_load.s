@@ -162,18 +162,18 @@ cmd_load:
     bne @loop_seginfo
 
     ; allocate memory for the segments
-    ldx #tlen
-    ldy #dest_tbase
+    ldx #dest_tbase
+    ldy #tlen
     jsr sys_malloc
     bne load_error
 
-    ldx #dlen
-    ldy #dest_dbase
+    ldx #dest_dbase
+    ldy #dlen
     jsr sys_malloc
     bne load_error
 
-    ldx #blen
-    ldy #dest_bbase
+    ldx #dest_bbase
+    ldy #blen
     jsr sys_malloc
     bne load_error
 
@@ -221,15 +221,16 @@ read_imports:
     sta len+1
 
     ; allocate memory for the import address mapping
-    ldx #len
-    ldy #dest_imports
+    ldx #dest_imports
+    asl len     ; each address is 2 bytes, so use len*2
+    rol len+1
+    ldy #len
     jsr sys_malloc
     bne load_error
-    ; allocate twice the size, as each import slot holds one address (2 bytes)
-    ; Note: assuming allocation is contiguous w/ previous block.
-    ldy #cur_dst_import ; dummy storage
-    jsr sys_malloc
-    bne load_error
+
+    ; restore length, len /= 2
+    lsr len+1
+    ror len
 
     ; start filling up first import
     lda dest_imports

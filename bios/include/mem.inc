@@ -36,3 +36,4 @@
 
 ; functions
 .global sys_malloc
+.global sys_free

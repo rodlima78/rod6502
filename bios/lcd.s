@@ -51,6 +51,7 @@ lcd_printchar:
     rts
 
 lcd_hex:
+    php
     phy
     pha
     lsr a  ; shift high nibble into low nibble
@@ -68,6 +69,7 @@ lcd_hex:
     jsr lcd_printchar
     pla
     ply
+    plp
     rts
 
 lcd_string:

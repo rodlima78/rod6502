@@ -1,5 +1,6 @@
 .include "sys.inc"
 .include "lcd.inc"
+.include "mem.inc"
 
 .import cmd_loop
 .export import_table
@@ -26,4 +27,6 @@ import_table:
     defsymbol lcd_printchar
     defsymbol lcd_string
     defsymbol sys_exit
+    defsymbol sys_free
+    defsymbol sys_malloc
     .byte 0 ; end-of-table
