@@ -23,14 +23,13 @@ sys_exit:
 
 import_table:
     ; must be sorted in ascii order
-    defsymbol LCD_MSGBASE
     defsymbol io_cb_put_char
     defsymbol io_hex
     defsymbol io_put_char
     defsymbol io_put_const_string
     defsymbol lcd_hex
     defsymbol lcd_put_char
-    defsymbol lcd_string
+    defsymbol lcd_put_const_string
     defsymbol sys_exit
     defsymbol sys_free
     defsymbol sys_malloc

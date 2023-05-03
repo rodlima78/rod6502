@@ -3,12 +3,10 @@
 
 .export main
 
-.rodata
-HELLO: .asciiz "Hello, world!"
-
 .code
 main:
-    lcd_print HELLO
+    jsr lcd_put_const_string
+    .asciiz "Hello, world!"
     jmp sys_exit
 
 .interruptor irq0_handler, 1

@@ -150,7 +150,8 @@ post_success:
     lda #($80+$40) ; cursor to 2nd line
     sta LCD_INSTR
     jsr lcd_wait
-    lcd_print STR_TEST_OK
+    jsr lcd_put_const_string
+    .asciiz "OK"
 
     lda #VIA_LED_GREEN
     sta VIA_IO_B

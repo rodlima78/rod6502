@@ -63,20 +63,11 @@ lcd_hex:
     plp
     rts
 
-lcd_string:
+lcd_put_const_string:
     pha
-    phy
-    ldy #0
-lcd_str0:
-    lda (LCD_MSGBASE), y
-    beq lcd_str1
-    jsr lcd_put_char
-    iny
-    bne lcd_str0
-lcd_str1:
-    ply
+    lda #<lcd_put_char
+    sta io_cb_put_char
+    lda #>lcd_put_char
+    sta io_cb_put_char+1
     pla
-    rts
-
-.zeropage
-LCD_MSGBASE: .res 2
+    jmp io_put_const_string

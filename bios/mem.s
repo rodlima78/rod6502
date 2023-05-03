@@ -135,15 +135,13 @@ sys_malloc:
     rts
 
 @error:
-.rodata
-@nomem_str: .asciiz   "NOMEM"
-.code
     ; restore stack
     ply ; (not needed) restore ptr to output addr
     plp ; restore whether len align==1 (C==1) or align==2
     jsr @rollback_len_update
 
-    lcd_print @nomem_str
+    jsr lcd_put_const_string
+    .asciiz "NOMEM"
     lda #1
     rts
 
