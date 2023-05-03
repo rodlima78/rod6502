@@ -1,4 +1,5 @@
 .include "lcd.inc"
+.include "io.inc"
 
 .code
 
@@ -52,23 +53,13 @@ lcd_put_char:
 
 lcd_hex:
     php
-    phy
     pha
-    lsr a  ; shift high nibble into low nibble
-    lsr a
-    lsr a
-    lsr a
-    tay
-    lda LCD_HEXASCII,y ; convert to ASCII
-    jsr lcd_put_char
+    lda #<lcd_put_char
+    sta io_cb_put_char
+    lda #>lcd_put_char
+    sta io_cb_put_char+1
     pla
-    pha
-    and #$0F ; select low nibble
-    tay
-    lda LCD_HEXASCII,y
-    jsr lcd_put_char
-    pla
-    ply
+    jsr io_hex
     plp
     rts
 
@@ -86,9 +77,6 @@ lcd_str1:
     ply
     pla
     rts
-
-.rodata
-LCD_HEXASCII: .byte "0123456789ABCDEF"
 
 .zeropage
 LCD_MSGBASE: .res 2

@@ -1,6 +1,7 @@
 .include "sys.inc"
 .include "lcd.inc"
 .include "mem.inc"
+.include "io.inc"
 
 .import cmd_loop
 .export import_table
@@ -23,6 +24,9 @@ sys_exit:
 import_table:
     ; must be sorted in ascii order
     defsymbol LCD_MSGBASE
+    defsymbol io_cb_put_char
+    defsymbol io_hex
+    defsymbol io_put_char
     defsymbol lcd_hex
     defsymbol lcd_put_char
     defsymbol lcd_string
