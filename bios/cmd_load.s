@@ -3,6 +3,7 @@
 .include "mem.inc"
 .include "xmodem.inc"
 .include "sys.inc"
+.include "strlist.inc"
 
 .importzp app_loaded
 .import import_table
@@ -38,10 +39,6 @@ slen:  .res 2 ; stack length
 
 ptr: .res 2
 len: .res 2
-cb_found: .res 2
-cb_not_found: .res 2
-cb_read_byte: .res 2
-strlist: .res 2
 
 ; must have same order as segs in o65 header
 dest_tbase: .res 2
@@ -217,9 +214,11 @@ read_dataseg:
 read_imports:
     ; receive number of imports to read
     jsr xmodem_read_byte
-    sta len 
+    sta len
+    sta strlist_len
     jsr xmodem_read_byte
     sta len+1
+    sta strlist_len+1
 
     ; allocate memory for the import address mapping
     ldx #dest_imports
@@ -228,10 +227,6 @@ read_imports:
     ldy #len
     jsr sys_malloc
     bne load_error
-
-    ; restore length, len /= 2
-    lsr len+1
-    ror len
 
     ; start filling up first import
     lda dest_imports
@@ -245,30 +240,30 @@ read_imports:
     sta strlist+1
 
     lda #<@item_found
-    sta cb_found
+    sta strlist_cb_found
     lda #>@item_found
-    sta cb_found+1
+    sta strlist_cb_found+1
 
     lda #<@item_not_found
-    sta cb_not_found
+    sta strlist_cb_not_found
     lda #>@item_not_found
-    sta cb_not_found+1
+    sta strlist_cb_not_found+1
 
     lda #<xmodem_read_byte
-    sta cb_read_byte
+    sta strlist_cb_read_byte
     lda #>xmodem_read_byte
-    sta cb_read_byte+1
+    sta strlist_cb_read_byte+1
 
-    jsr process_stringlist
+    jsr process_strlist
 
     bra read_textrel
 
 @item_found:
     ; Save the import address to the dst import table
-    lda (ptr),y
+    lda (strlist_ptr),y
     sta (cur_dst_import)
     iny
-    lda (ptr),y
+    lda (strlist_ptr),y
     ldy #1               ; we don't need y anymore, this is ok
     sta (cur_dst_import),y
 
@@ -299,9 +294,9 @@ read_datarel:
 read_exported_globals_list:
     ; receive number of exports to read
     jsr xmodem_read_byte
-    sta len 
+    sta strlist_len 
     jsr xmodem_read_byte
-    sta len+1
+    sta strlist_len+1
 
     ; set up the stringlist processing to
     ; find the global exports we understand from
@@ -313,21 +308,21 @@ read_exported_globals_list:
     sta strlist+1
 
     lda #<@item_found
-    sta cb_found
+    sta strlist_cb_found
     lda #>@item_found
-    sta cb_found+1
+    sta strlist_cb_found+1
 
     lda #<@item_not_found
-    sta cb_not_found
+    sta strlist_cb_not_found
     lda #>@item_not_found
-    sta cb_not_found+1
+    sta strlist_cb_not_found+1
 
     lda #<xmodem_read_byte
-    sta cb_read_byte
+    sta strlist_cb_read_byte
     lda #>xmodem_read_byte
-    sta cb_read_byte+1
+    sta strlist_cb_read_byte+1
 
-    jsr process_stringlist
+    jsr process_strlist
 
     bra o65_finished
 
@@ -343,10 +338,10 @@ read_exported_globals_list:
     pha                  ; save typebyte|segID
 
     ; set the address to be relocated
-    lda (ptr),y
+    lda (strlist_ptr),y
     sta cur_rel
     iny
-    lda (ptr),y
+    lda (strlist_ptr),y
     sta cur_rel+1
 
     ; Initialize it with the src address
@@ -646,80 +641,5 @@ relocate:
     clc
     adc (cur_rel)        ; add data LSB
     sta (cur_rel)        ; store relocated LSB (do not need MSB)
-    rts
-
-
-; =============================================
-; len: zp ptr to number of elements to process
-; strlist: zp ptr to string list
-; cb_found: called for each string found, ptr points to matched list item,
-;           Y points to the first byte after end of item string
-; cb_not_found: called for each string not found
-; cb_read_byte: called when a byte is needed, returned in A
-process_stringlist:
-    ; exit loop when len==0
-    lda len
-    bne @skip_msb3
-    lda len+1
-    beq @end
-    ; decrement number of items to be processed
-    dec len+1
-@skip_msb3:
-    dec len
-
-    ; start search from first list item
-    lda strlist
-    sta ptr 
-    lda strlist+1
-    sta ptr+1
-
-    ldy #1  ; point to first character
-@find_newchar:
-    ; emulate 'jsr (cb_read_byte)'
-    lda #>(@find_char-1)
-    pha
-    lda #<(@find_char-1)
-    pha
-    jmp (cb_read_byte)
-@find_char:
-    cmp (ptr),y
-    bcc @not_found       ; query < string ? not found
-    bne @try_next_string ; query > string ? try next
-    cmp #0               ; query == string, end of string? 
-    beq @found           ; yes, found it!
-    iny                  ; no, compare next char
-    bra @find_newchar
-
-@try_next_string:
-    pha                  ; save query char
-    ; increment ptr
-    lda (ptr) ; load stride
-    clc
-    adc ptr   ; make ptr point to next string
-    sta ptr 
-    bcc @skip_msb
-    inc ptr+1
-@skip_msb:
-    pla             ; restore query char
-    bra @find_char
-
-@found:
-    ; simulate indirect jsr, but process next item on return
-    lda #>(process_stringlist-1)
-    pha
-    lda #<(process_stringlist-1)
-    pha
-    iny ; Y points to the first byte after item key
-    jmp (cb_found)
-
-@not_found:
-    ; simulate indirect jsr, but process next item on return
-    lda #>(process_stringlist-1)
-    pha
-    lda #<(process_stringlist-1)
-    pha
-    jmp (cb_not_found)
-
-@end:
     rts
 
