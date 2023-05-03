@@ -40,6 +40,7 @@ ptr: .res 2
 len: .res 2
 cb_found: .res 2
 cb_not_found: .res 2
+cb_read_byte: .res 2
 strlist: .res 2
 
 ; must have same order as segs in o65 header
@@ -253,6 +254,11 @@ read_imports:
     lda #>@item_not_found
     sta cb_not_found+1
 
+    lda #<xmodem_read_byte
+    sta cb_read_byte
+    lda #>xmodem_read_byte
+    sta cb_read_byte+1
+
     jsr process_stringlist
 
     bra read_textrel
@@ -315,6 +321,11 @@ read_exported_globals_list:
     sta cb_not_found
     lda #>@item_not_found
     sta cb_not_found+1
+
+    lda #<xmodem_read_byte
+    sta cb_read_byte
+    lda #>xmodem_read_byte
+    sta cb_read_byte+1
 
     jsr process_stringlist
 
@@ -641,8 +652,10 @@ relocate:
 ; =============================================
 ; len: zp ptr to number of elements to process
 ; strlist: zp ptr to string list
-; callback: called for each string found, ptr points to matched list item,
+; cb_found: called for each string found, ptr points to matched list item,
 ;           Y points to the first byte after end of item string
+; cb_not_found: called for each string not found
+; cb_read_byte: called when a byte is needed, returned in A
 process_stringlist:
     ; exit loop when len==0
     lda len
@@ -662,7 +675,12 @@ process_stringlist:
 
     ldy #1  ; point to first character
 @find_newchar:
-    jsr xmodem_read_byte
+    ; emulate 'jsr (cb_read_byte)'
+    lda #>(@find_char-1)
+    pha
+    lda #<(@find_char-1)
+    pha
+    jmp (cb_read_byte)
 @find_char:
     cmp (ptr),y
     bcc @not_found       ; query < string ? not found
