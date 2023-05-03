@@ -2,11 +2,16 @@
 .include "acia.inc"
 .include "via.inc"
 .include "lcd.inc"
+.include "strlist.inc"
 
 PROMPT = '>'
 
 .feature string_escapes
 .feature loose_char_term
+
+.segment "ZPTMP": zeropage
+idx_cmd_buffer: .res 1
+pcmd: .res 2
 
 .code
 cmd_loop:
@@ -14,27 +19,29 @@ cmd_loop:
     lda #0
     sta VIA_IO_B
 
-    jsr read_cmd
-    asl ; A*2 -> index to addr table of chosen command
-    tax
-    jmp (cmd_jumptable,x)
+    jsr parse_cmd
+
+    lda pcmd+1      ; when testing for fn pointers, we only have to test MSB
+    beq cmd_loop    ; cmd failed
+    jmp (pcmd)
+    bra cmd_loop
 
 .rodata
+.macro def_cmd_handler name, sym
+    .byte 1+.strlen(.string(name))+1+2
+    .asciiz .string(name)
+    .addr sym
+.endmacro
 cmd_jumptable:
-    .addr cmd_load
-    .addr cmd_run
-
-CMD_LOAD  = 0
-CMD_RUN   = 1
-
-STR_LOAD: .asciiz "load"
-STR_RUN: .asciiz "run"
+    def_cmd_handler load, cmd_load
+    def_cmd_handler run, cmd_run
+    .byte 0 ; end of table
 
 .segment "ZPTMP": zeropage
-CMD_BUFFER: .res 8
+CMD_BUFFER: .res 16
 
 .code
-read_cmd:
+parse_cmd:
     jsr acia_put_const_string
     .asciiz "\r\n"
 
@@ -86,28 +93,63 @@ read_cmd:
 
     ; Now let's compare the cmd string against the commands we define
 
-.macro compare str, next
-    ldx #0 
-:   lda CMD_BUFFER,x
-    cmp str,x         ; compare cmd and "load"
-    bne next          ; different? try next one
-    inx
-    cpx #.sizeof(str) ; reached end of string?
-    bne :-            ; no? continue comparison
-.endmacro
+    ; our pointer to the character to be returned by item_read_byte
+    stz idx_cmd_buffer
+    
+    ; just one item
+    lda #1
+    sta strlist_len
+    stz strlist_len+1
 
-@compare_run:
-    compare STR_RUN, @compare_load
-    lda #CMD_RUN
+    lda #<cmd_jumptable
+    sta strlist
+    lda #>cmd_jumptable
+    sta strlist+1
+
+    lda #<item_found
+    sta strlist_cb_found
+    lda #>item_found
+    sta strlist_cb_found+1
+
+    lda #<item_not_found
+    sta strlist_cb_not_found
+    lda #>item_not_found
+    sta strlist_cb_not_found+1
+
+    lda #<item_read_byte
+    sta strlist_cb_read_byte
+    lda #>item_read_byte
+    sta strlist_cb_read_byte+1
+
+    jsr process_strlist
     rts
 
-@compare_load:
-    compare STR_LOAD, @error_invalid_cmd
-    lda #CMD_LOAD
+item_read_byte:
+    ldx idx_cmd_buffer         ; strlist_cb_read_byte doesn't require us to preserve X
+    lda CMD_BUFFER,x
+    cmp #' '    ; space marks the end of the command, the rest is parameters
+    bne @ret
+    lda #0
+@ret:
+    inc idx_cmd_buffer
     rts
 
-@error_invalid_cmd:
+item_found:
+    ; Set pcmd to the address of the cmd function to be called
+    lda (strlist_ptr),y
+    sta pcmd
+    iny
+    lda (strlist_ptr),y
+    sta pcmd+1
+    iny
+    rts
+
+item_not_found:
+    ; set pcmd to NULL, indicating invalid command
+    stz pcmd
+    stz pcmd+1
+
     jsr acia_put_const_string
     .asciiz "invalid command\r\n"
-    jmp @prompt
+    rts
 
