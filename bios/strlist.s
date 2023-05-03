@@ -17,11 +17,15 @@ strlist: .res 2
 ; strlist_cb_not_found: called for each string not found
 ; strlist_cb_read_byte: called when a byte is needed, returned in A
 process_strlist:
-    ; exit loop when len==0
+    ; early if len==0
     lda strlist_len
     bne @skip_msb3
     lda strlist_len+1
     beq @end
+    ; or when the list is empty
+    lda (strlist)
+    beq @end
+
     ; decrement number of items to be processed
     dec strlist_len+1
 @skip_msb3:
@@ -52,8 +56,11 @@ process_strlist:
 
 @try_next_string:
     pha                  ; save query char
-    ; increment ptr
-    lda (strlist_ptr) ; load stride
+    lda (strlist_ptr)    ; load stride
+    bne @has_next_string ; end of strlist (stride==0)?
+    pla                  ; yes, restore stack
+    bra @not_found       ; signal that it wasn't found
+@has_next_string:        ; no, go to next string
     clc
     adc strlist_ptr   ; make ptr point to next string
     sta strlist_ptr 
