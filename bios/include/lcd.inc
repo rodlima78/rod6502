@@ -6,7 +6,7 @@
 .global lcd_init
 .global lcd_wait
 .global lcd_clear
-.global lcd_printchar
+.global lcd_put_char
 .global lcd_hex
 .global lcd_string
 

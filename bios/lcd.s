@@ -45,7 +45,7 @@ lcd_clear:
     pla
     rts
 
-lcd_printchar:
+lcd_put_char:
     sta LCD_DATA
     jsr lcd_wait
     rts
@@ -60,13 +60,13 @@ lcd_hex:
     lsr a
     tay
     lda LCD_HEXASCII,y ; convert to ASCII
-    jsr lcd_printchar
+    jsr lcd_put_char
     pla
     pha
     and #$0F ; select low nibble
     tay
     lda LCD_HEXASCII,y
-    jsr lcd_printchar
+    jsr lcd_put_char
     pla
     ply
     plp
@@ -79,7 +79,7 @@ lcd_string:
 lcd_str0:
     lda (LCD_MSGBASE), y
     beq lcd_str1
-    jsr lcd_printchar
+    jsr lcd_put_char
     iny
     bne lcd_str0
 lcd_str1:
