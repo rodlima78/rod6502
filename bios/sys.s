@@ -27,6 +27,7 @@ import_table:
     defsymbol io_cb_put_char
     defsymbol io_hex
     defsymbol io_put_char
+    defsymbol io_put_const_string
     defsymbol lcd_hex
     defsymbol lcd_put_char
     defsymbol lcd_string
