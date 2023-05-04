@@ -24,10 +24,10 @@ sys_exit:
 import_table:
     ; must be sorted in ascii order
     defsymbol io_cb_put_char
-    defsymbol io_hex
+    defsymbol io_put_hex
     defsymbol io_put_char
     defsymbol io_put_const_string
-    defsymbol lcd_hex
+    defsymbol lcd_put_hex
     defsymbol lcd_put_char
     defsymbol lcd_put_const_string
     defsymbol sys_exit

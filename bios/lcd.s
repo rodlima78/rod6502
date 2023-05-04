@@ -51,7 +51,7 @@ lcd_put_char:
     jsr lcd_wait
     rts
 
-lcd_hex:
+lcd_put_hex:
     php
     pha
     lda #<lcd_put_char
@@ -59,7 +59,7 @@ lcd_hex:
     lda #>lcd_put_char
     sta io_cb_put_char+1
     pla
-    jsr io_hex
+    jsr io_put_hex
     plp
     rts
 

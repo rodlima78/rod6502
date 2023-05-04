@@ -14,7 +14,7 @@ STACK_SEG = $0100
 .code
 ; =============================================
 ; input: A = byte to be output as hex string
-io_hex:
+io_put_hex:
     php
     phy
     pha
