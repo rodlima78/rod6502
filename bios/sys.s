@@ -2,6 +2,7 @@
 .include "lcd.inc"
 .include "mem.inc"
 .include "io.inc"
+.include "acia.inc"
 
 .import cmd_loop
 .export import_table
@@ -23,6 +24,8 @@ sys_exit:
 
 import_table:
     ; must be sorted in ascii order
+    defsymbol acia_get_byte
+    defsymbol acia_put_byte
     defsymbol io_cb_get_byte
     defsymbol io_cb_put_byte
     defsymbol io_get_byte
