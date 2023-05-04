@@ -132,6 +132,7 @@ item_read_byte:
     lda #0
 @ret:
     inc idx_cmd_buffer
+    clc
     rts
 
 item_found:

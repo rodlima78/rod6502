@@ -16,7 +16,13 @@ strlist: .res 2
 ;                   Y points to the first byte after end of item string
 ; strlist_cb_not_found: called for each string not found
 ; strlist_cb_read_byte: called when a byte is needed, returned in A
+; C==1, error
 process_strlist:
+    clc
+
+@next_item:
+    bcs @end
+
     ; early if len==0
     lda strlist_len
     bne @skip_msb3
@@ -40,11 +46,13 @@ process_strlist:
     ldy #1  ; point to first character
 @find_newchar:
     ; emulate 'jsr (strlist_cb_read_byte)'
-    lda #>(@find_char-1)
+    lda #>(@after_read_byte-1)
     pha
-    lda #<(@find_char-1)
+    lda #<(@after_read_byte-1)
     pha
     jmp (strlist_cb_read_byte)
+@after_read_byte:
+    bcs @end             ; read byte has errors? bail
 @find_char:
     cmp (strlist_ptr),y
     bcc @not_found       ; query < string ? not found
@@ -72,18 +80,18 @@ process_strlist:
 
 @found:
     ; simulate indirect jsr, but process next item on return
-    lda #>(process_strlist-1)
+    lda #>(@next_item-1)
     pha
-    lda #<(process_strlist-1)
+    lda #<(@next_item-1)
     pha
     iny ; Y points to the first byte after item key
     jmp (strlist_cb_found)
 
 @not_found:
     ; simulate indirect jsr, but process next item on return
-    lda #>(process_strlist-1)
+    lda #>(@next_item-1)
     pha
-    lda #<(process_strlist-1)
+    lda #<(@next_item-1)
     pha
     jmp (strlist_cb_not_found)
 

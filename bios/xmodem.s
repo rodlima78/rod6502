@@ -162,6 +162,7 @@ xmodem_read_byte:
     sta checksum
     pla
 
+    clc
     rts
 
 xmodem_skip_block:

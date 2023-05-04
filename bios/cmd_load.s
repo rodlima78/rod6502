@@ -255,6 +255,7 @@ read_imports:
     sta strlist_cb_read_byte+1
 
     jsr process_strlist
+    bcs load_error
 
     bra read_textrel
 
@@ -323,8 +324,11 @@ read_exported_globals_list:
     sta strlist_cb_read_byte+1
 
     jsr process_strlist
-
+    bcs @load_error1
     bra o65_finished
+
+@load_error1:
+    jmp load_error
 
 @item_found:
     ; Use our relocation function to write the final symbol addres
