@@ -4,6 +4,8 @@
 .include "lcd.inc"
 .include "strlist.inc"
 
+.export cmd_get_byte
+
 PROMPT = '>'
 
 .feature string_escapes
@@ -11,9 +13,23 @@ PROMPT = '>'
 
 .segment "ZPTMP": zeropage
 idx_cmd_buffer: .res 1
+CMD_BUFFER: .res 16
 pcmd: .res 2
 
 .code
+
+cmd_get_byte:
+    phx
+    ldx idx_cmd_buffer
+    lda CMD_BUFFER,x
+    beq @end              ; end of string? do not increment idx
+    inx
+    stx idx_cmd_buffer    ; 'inx + stx zp' takes 5 clks, 'inc zp' takes 6
+@end:
+    plx
+    clc
+    rts
+
 cmd_loop:
     jsr acia_start
     lda #0
@@ -36,9 +52,6 @@ cmd_jumptable:
     def_cmd_handler load, cmd_load
     def_cmd_handler run, cmd_run
     .byte 0 ; end of table
-
-.segment "ZPTMP": zeropage
-CMD_BUFFER: .res 16
 
 .code
 parse_cmd:
@@ -125,13 +138,11 @@ parse_cmd:
     rts
 
 item_get_byte:
-    ldx idx_cmd_buffer         ; strlist_cb_get_byte doesn't require us to preserve X
-    lda CMD_BUFFER,x
+    jsr cmd_get_byte
     cmp #' '    ; space marks the end of the command, the rest is parameters
     bne @ret
     lda #0
 @ret:
-    inc idx_cmd_buffer
     clc
     rts
 
