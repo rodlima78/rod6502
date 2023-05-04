@@ -53,21 +53,11 @@ lcd_put_byte:
 
 lcd_put_hex:
     php
-    pha
-    lda #<lcd_put_byte
-    sta io_cb_put_byte
-    lda #>lcd_put_byte
-    sta io_cb_put_byte+1
-    pla
+
+    jsr io_push_put_byte
+    .addr lcd_put_byte
     jsr io_put_hex
+    jsr io_pop_put_byte
+
     plp
     rts
-
-lcd_put_const_string:
-    pha
-    lda #<lcd_put_byte
-    sta io_cb_put_byte
-    lda #>lcd_put_byte
-    sta io_cb_put_byte+1
-    pla
-    jmp io_put_const_string

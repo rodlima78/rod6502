@@ -13,6 +13,110 @@ ptr: .res 2
 STACK_SEG = $0100
 
 .code
+
+.macro io_push_cb cb
+    ;                         0   1  2
+    ; stack:                 <S> Rl Rh
+    phx
+    pha               
+    ;                   0  1  2   3  4
+    ; stack:           <S> A  X  Rl Rh
+    phx
+    pha
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X  A  X  Rl Rh 
+    
+    tsx
+
+    lda STACK_SEG+5,x ; copy Rl
+    sta ptr
+    clc
+    adc #2            ; must return right after the addr parameter
+    sta STACK_SEG+3,x
+    lda STACK_SEG+6,x ; copy Rh
+    sta ptr+1
+    adc #0            ; propagate carry from Rl+2
+    sta STACK_SEG+4,x
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X Rl Rh  Rl Rh 
+
+    lda cb
+    sta STACK_SEG+5,x
+    lda cb+1
+    sta STACK_SEG+6,x
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X Rl Rh  Cl Ch 
+    
+    ; Set the current callback function
+    phy
+    ldy #1
+    lda (ptr),y 
+    sta cb 
+    iny
+    lda (ptr),y
+    sta cb+1
+    ply
+
+    pla
+    plx
+    ;                  0   1  2   3  4
+    ; stack:          <S> Rl Rh  Cl Ch 
+.endmacro
+
+.macro io_pop_cb cb
+    ;                  0   1  2   3  4
+    ; stack:          <S> Rl Rh  Cl Ch 
+    phx
+    pha               
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X Rl Rh  Cl Ch 
+    tsx
+
+    lda STACK_SEG+5,x ; copy Cl
+    sta cb
+    lda STACK_SEG+6,x ; copy Ch
+    sta cb+1
+
+    lda STACK_SEG+3,x ; copy Rl
+    sta STACK_SEG+5,x
+    lda STACK_SEG+4,x ; copy Rh
+    sta STACK_SEG+6,x
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X Rl Rh  Rl Rh 
+    lda STACK_SEG+1,x ; copy A
+    sta STACK_SEG+3,x
+    lda STACK_SEG+2,x ; copy X
+    sta STACK_SEG+4,x
+    ;              0  1 2  3  4   5  6
+    ; stack:      <S> A X  A  X  Rl Rh 
+    pla
+    plx
+    pla
+    plx
+    ;                         0   1  2
+    ; stack:                 <S> Rl Rh
+.endmacro
+
+; =============================================
+io_push_put_byte:
+    io_push_cb io_cb_put_byte
+    rts
+
+; =============================================
+io_pop_put_byte:
+    io_pop_cb io_cb_put_byte
+    rts
+
+; =============================================
+io_push_get_byte:
+    io_push_cb io_cb_get_byte
+    rts
+
+; =============================================
+io_pop_get_byte:
+    io_pop_cb io_cb_get_byte
+    rts
+
 ; =============================================
 ; input: A = byte to be output as hex string
 io_put_hex:

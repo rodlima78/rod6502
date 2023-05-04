@@ -6,4 +6,3 @@
 .global lcd_clear
 .global lcd_put_byte
 .global lcd_put_hex
-.global lcd_put_const_string

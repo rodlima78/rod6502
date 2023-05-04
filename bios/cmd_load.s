@@ -4,6 +4,7 @@
 .include "xmodem.inc"
 .include "sys.inc"
 .include "strlist.inc"
+.include "io.inc"
 
 .importzp app_loaded
 .import import_table
@@ -97,8 +98,11 @@ cmd_load:
     lda #>__ZEROPAGE_SIZE__
     sta dest_zbase+1
 
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "Please initiate transfer..."
+    jsr io_pop_put_byte
 
     ldx #<load_error
     ldy #>load_error
@@ -383,8 +387,11 @@ o65_finished:
     jsr zero_bss
 
 @skip_zero_bss:
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz " OK"
+    jsr io_pop_put_byte
     
     ; signal that app is now loaded
     lda #$FF

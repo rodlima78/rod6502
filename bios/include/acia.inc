@@ -7,7 +7,6 @@
 .global acia_stop
 .global acia_get_byte
 .global acia_put_byte
-.global acia_put_const_string
 .global acia_purge
 .global acia_enable_echo
 .global acia_disable_echo

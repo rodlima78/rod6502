@@ -2,6 +2,7 @@
 .include "acia.inc"
 .include "mem.inc"
 .include "xmodem.inc"
+.include "io.inc"
 
 .importzp app_loaded
 
@@ -113,8 +114,11 @@ xmodem_error:
     jsr acia_put_byte
 
     jsr acia_purge
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz " FAILED"
+    jsr io_pop_put_byte
 
     ; indicate transfer has finished
     lda #$ff

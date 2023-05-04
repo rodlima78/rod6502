@@ -258,16 +258,6 @@ acia_put_byte:
 ADDR_BUFFER: .res 2
 
 .code
-; input: string comes right after jsr
-acia_put_const_string:
-    pha
-    lda #<acia_put_byte
-    sta io_cb_put_byte
-    lda #>acia_put_byte
-    sta io_cb_put_byte+1
-    pla
-    jmp io_put_const_string ; tail-call optimization
-
 tx_interrupt_handler:
     pha
     lda timeout_state

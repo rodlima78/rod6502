@@ -3,6 +3,7 @@
 .include "via.inc"
 .include "lcd.inc"
 .include "strlist.inc"
+.include "io.inc"
 
 .export cmd_get_byte
 
@@ -55,8 +56,11 @@ cmd_jumptable:
 
 .code
 parse_cmd:
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "\r\n"
+    jsr io_pop_put_byte
 
 @prompt:
     lda #PROMPT
@@ -82,26 +86,38 @@ parse_cmd:
     bra @get_byte
 
 @buffer_overflow:
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "\r\ncommand too large\r\n"
+    jsr io_pop_put_byte
     bra @prompt
 
 @comm_error:
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "\r\ncommunication error\r\n"
+    jsr io_pop_put_byte
     bra @prompt
 
 @backspace:
     cpx #0
     beq @get_byte
     dex
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "\x08 \x08"
+    jsr io_pop_put_byte
     bra @get_byte
 
 @got_cmd:
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "\r\n"
+    jsr io_pop_put_byte
     stz CMD_BUFFER,x ; NUL marks end of buffer
 
     ; Now let's compare the cmd string against the commands we define
@@ -161,7 +177,10 @@ item_not_found:
     stz pcmd
     stz pcmd+1
 
-    jsr acia_put_const_string
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_put_const_string
     .asciiz "invalid command\r\n"
+    jsr io_pop_put_byte
     rts
 

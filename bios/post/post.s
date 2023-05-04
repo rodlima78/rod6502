@@ -1,6 +1,7 @@
 .include "via.inc"
 .include "irq.inc"
 .include "lcd.inc"
+.include "io.inc"
 
 POST_STAGE_ZP = 0
 POST_STAGE_STACK = 1
@@ -150,8 +151,11 @@ post_success:
     lda #($80+$40) ; cursor to 2nd line
     sta LCD_INSTR
     jsr lcd_wait
-    jsr lcd_put_const_string
+    jsr io_push_put_byte
+    .addr lcd_put_byte
+    jsr io_put_const_string
     .asciiz "OK"
+    jsr io_pop_put_byte
 
     lda #VIA_LED_GREEN
     sta VIA_IO_B

@@ -26,15 +26,16 @@ import_table:
     ; must be sorted in ascii order
     defsymbol acia_get_byte
     defsymbol acia_put_byte
-    defsymbol io_cb_get_byte
-    defsymbol io_cb_put_byte
     defsymbol io_get_byte
     defsymbol io_get_hex
+    defsymbol io_pop_get_byte
+    defsymbol io_pop_put_byte
+    defsymbol io_push_get_byte
+    defsymbol io_push_put_byte
     defsymbol io_put_byte
     defsymbol io_put_const_string
     defsymbol io_put_hex
     defsymbol lcd_put_byte
-    defsymbol lcd_put_const_string
     defsymbol lcd_put_hex
     defsymbol sys_exit
     defsymbol sys_free

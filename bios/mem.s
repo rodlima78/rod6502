@@ -1,5 +1,6 @@
 .include "lcd.inc"
 .include "mem.inc"
+.include "io.inc"
 
 .export init_mem
 
@@ -140,8 +141,11 @@ sys_malloc:
     plp ; restore whether len align==1 (C==1) or align==2
     jsr @rollback_len_update
 
-    jsr lcd_put_const_string
+    jsr io_push_put_byte
+    .addr lcd_put_byte
+    jsr io_put_const_string
     .asciiz "NOMEM"
+    jsr io_pop_put_byte
     lda #1
     rts
 
