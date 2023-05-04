@@ -47,15 +47,15 @@ parse_cmd:
 
 @prompt:
     lda #PROMPT
-    jsr acia_put_char
+    jsr acia_put_byte
 
     lda #VIA_LED_GREEN
     sta VIA_IO_B
 
     ldx #0 ; points to address to store next char to be read
-@get_char:
+@get_byte:
     lda #0 ; no timeout
-    jsr acia_get_char
+    jsr acia_get_byte
     bcs @comm_error
     cmp #$0d            ; line feed?
     beq @got_cmd        ; yes, command was entered
@@ -64,9 +64,9 @@ parse_cmd:
     cpx #.sizeof(CMD_BUFFER) ; reached end of buffer space?
     beq @buffer_overflow     ; yes, show error
     sta CMD_BUFFER,x    ; no, append character to buffer
-    jsr acia_put_char   ; echo it back
+    jsr acia_put_byte   ; echo it back
     inx                 ; bump next address
-    bra @get_char
+    bra @get_byte
 
 @buffer_overflow:
     jsr acia_put_const_string
@@ -80,11 +80,11 @@ parse_cmd:
 
 @backspace:
     cpx #0
-    beq @get_char
+    beq @get_byte
     dex
     jsr acia_put_const_string
     .asciiz "\x08 \x08"
-    bra @get_char
+    bra @get_byte
 
 @got_cmd:
     jsr acia_put_const_string
@@ -93,7 +93,7 @@ parse_cmd:
 
     ; Now let's compare the cmd string against the commands we define
 
-    ; our pointer to the character to be returned by item_get_char
+    ; our pointer to the character to be returned by item_get_byte
     stz idx_cmd_buffer
     
     ; just one item
@@ -116,16 +116,16 @@ parse_cmd:
     lda #>item_not_found
     sta strlist_cb_not_found+1
 
-    lda #<item_get_char
-    sta strlist_cb_get_char
-    lda #>item_get_char
-    sta strlist_cb_get_char+1
+    lda #<item_get_byte
+    sta strlist_cb_get_byte
+    lda #>item_get_byte
+    sta strlist_cb_get_byte+1
 
     jsr process_strlist
     rts
 
-item_get_char:
-    ldx idx_cmd_buffer         ; strlist_cb_get_char doesn't require us to preserve X
+item_get_byte:
+    ldx idx_cmd_buffer         ; strlist_cb_get_byte doesn't require us to preserve X
     lda CMD_BUFFER,x
     cmp #' '    ; space marks the end of the command, the rest is parameters
     bne @ret

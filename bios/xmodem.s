@@ -40,12 +40,12 @@ xmodem_init:
 
     ; signal sender to start transfer
     lda #NAK
-    jsr acia_put_char
+    jsr acia_put_byte
 
 start_block:
     ; start receiving block
     lda #3            ; 3s timeout (spec says it must be 10s)
-    jsr acia_get_char ; get start-of-header or end-of-transfer
+    jsr acia_get_byte ; get start-of-header or end-of-transfer
     bcs xmodem_error
     cmp #EOT            ; end of transfer?
     beq @file_received  ; yes, we're good
@@ -53,13 +53,13 @@ start_block:
     bne xmodem_error    ; no? error
 
     lda #1             ; 1s timeout
-    jsr acia_get_char ; block number
+    jsr acia_get_byte ; block number
     bcs xmodem_error
     cmp next_block    ; not what we expect?
     bne xmodem_error
 
     lda #1             ; 1s timeout
-    jsr acia_get_char ; 255 - block number
+    jsr acia_get_byte ; 255 - block number
     bcs xmodem_error
     clc
     adc next_block    ; (block_number + (255-block_number))%256 == 255
@@ -81,7 +81,7 @@ start_block:
 @file_received:
     ; acknowledge that we have received the file
     lda #ACK
-    jsr acia_put_char
+    jsr acia_put_byte
 
     ; indicate transfer has finished
     lda #$ff
@@ -103,14 +103,14 @@ xmodem_error:
     sta retries        
 
     lda #NAK            ; indicate sender to resend block
-    jsr acia_put_char
+    jsr acia_put_byte
 
     bra start_block     ; receive start of block
 @bail:
     ; Cancel transfer, must send 2 CANs
     lda #CAN
-    jsr acia_put_char
-    jsr acia_put_char
+    jsr acia_put_byte
+    jsr acia_put_byte
 
     jsr acia_purge
     jsr acia_put_const_string
@@ -128,21 +128,21 @@ xmodem_error:
 
 end_block:
     lda #1            ; 1s timeout
-    jsr acia_get_char ; yes, get checksum
+    jsr acia_get_byte ; yes, get checksum
     bcs xmodem_error
     cmp checksum
     bne xmodem_error
 
     ; acknowledge that we have received the block
     lda #ACK
-    jsr acia_put_char
+    jsr acia_put_byte
 
     inc next_block
 
     jmp start_block
 
 ; return a: byte read
-xmodem_get_char:
+xmodem_get_byte:
     lda next_data_in_block
     cmp #128        ; no more data in this block?
     bne @has_more_data   ; process end of block
@@ -150,7 +150,7 @@ xmodem_get_char:
 
 @has_more_data:
     lda #1             ; 1s timeout
-    jsr acia_get_char
+    jsr acia_get_byte
     bcs xmodem_error
 
     inc next_data_in_block
@@ -176,7 +176,7 @@ xmodem_skip_block:
     tax
 @loop:
     beq @end ; reached end of block? return
-    jsr acia_get_char
+    jsr acia_get_byte
     bcs xmodem_error
 
     ; update the checksum
@@ -198,8 +198,8 @@ xmodem_deinit:
     cmp #$ff    ; transfer is finished
     beq @done   ; yes, nothing else to do
     lda #CAN    ; no, cancel transfer
-    jsr acia_put_char
-    jsr acia_put_char
+    jsr acia_put_byte
+    jsr acia_put_byte
     jsr acia_purge
 @done:
     rts

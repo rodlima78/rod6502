@@ -1,8 +1,8 @@
 .include "io.inc"
 
 .data
-io_cb_put_char: .res 2
-io_cb_get_char: .res 2
+io_cb_put_byte: .res 2
+io_cb_get_byte: .res 2
 
 .rodata
 IO_HEXASCII: .byte "0123456789ABCDEF"
@@ -38,8 +38,8 @@ io_put_hex:
 io_nibble:
     tay
     lda IO_HEXASCII,y
-io_put_char:
-    jmp (io_cb_put_char) ; tail-call optimization
+io_put_byte:
+    jmp (io_cb_put_byte) ; tail-call optimization
 
 ; =============================================
 ; input: string comes right after jsr
@@ -59,7 +59,7 @@ io_put_const_string:
 @send_char:
     lda (ptr),y
     beq @end                    ; end of string (A==0)? go to end
-    jsr io_put_char             ; send character
+    jsr io_put_byte             ; send character
     iny
     bne @send_char              ; string not too long (y didn't wrap around)? continue
     bra @error                  ; or else go to error
@@ -89,15 +89,15 @@ io_put_const_string:
     rts
 
 ; =============================================
-io_get_char:
-    jmp (io_cb_get_char)
+io_get_byte:
+    jmp (io_cb_get_byte)
 
 ; =============================================
 ; output: A: parsed byte
 ; success: C==0, error: C==1
 io_get_hex:
     phx
-    jsr io_get_char
+    jsr io_get_byte
     bcs @end
     jsr parse_hex_nibble    ; parse most significant nibble
     bcs @end
@@ -106,8 +106,8 @@ io_get_hex:
     asl
     asl
     pha                     ; save it
-    jsr io_get_char
-    bcs @end_pop            ; return in case of errors in get_char
+    jsr io_get_byte
+    bcs @end_pop            ; return in case of errors in get_byte
     jsr parse_hex_nibble    ; parse the least significant nibble
     bcs @end_pop
     tsx

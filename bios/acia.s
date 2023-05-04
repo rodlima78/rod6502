@@ -152,7 +152,7 @@ acia_purge:
     pha 
 @retry:
     lda #1      ; 1s timeout
-    jsr acia_get_char
+    jsr acia_get_byte
     bcc @retry  ; got char (no error)? get next char
     bit #%1000  ; timeout?
     beq @retry  ; no (some other error)? try again
@@ -171,7 +171,7 @@ timeout_state: .res 1
 ; input: A -> timeout (seconds)
 ; return: A -> character read
 ; C==1 in case of errors
-acia_get_char:
+acia_get_byte:
     ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
     phx
 
@@ -239,7 +239,7 @@ acia_get_char:
     rts
 
 ; input: A -> character to be written out
-acia_put_char:
+acia_put_byte:
     sta ACIA_DATA
     stz timeout_state ; so that interrupt handler won't using it
     pha
@@ -261,10 +261,10 @@ ADDR_BUFFER: .res 2
 ; input: string comes right after jsr
 acia_put_const_string:
     pha
-    lda #<acia_put_char
-    sta io_cb_put_char
-    lda #>acia_put_char
-    sta io_cb_put_char+1
+    lda #<acia_put_byte
+    sta io_cb_put_byte
+    lda #>acia_put_byte
+    sta io_cb_put_byte+1
     pla
     jmp io_put_const_string ; tail-call optimization
 

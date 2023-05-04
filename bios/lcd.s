@@ -46,7 +46,7 @@ lcd_clear:
     pla
     rts
 
-lcd_put_char:
+lcd_put_byte:
     sta LCD_DATA
     jsr lcd_wait
     rts
@@ -54,10 +54,10 @@ lcd_put_char:
 lcd_put_hex:
     php
     pha
-    lda #<lcd_put_char
-    sta io_cb_put_char
-    lda #>lcd_put_char
-    sta io_cb_put_char+1
+    lda #<lcd_put_byte
+    sta io_cb_put_byte
+    lda #>lcd_put_byte
+    sta io_cb_put_byte+1
     pla
     jsr io_put_hex
     plp
@@ -65,9 +65,9 @@ lcd_put_hex:
 
 lcd_put_const_string:
     pha
-    lda #<lcd_put_char
-    sta io_cb_put_char
-    lda #>lcd_put_char
-    sta io_cb_put_char+1
+    lda #<lcd_put_byte
+    sta io_cb_put_byte
+    lda #>lcd_put_byte
+    sta io_cb_put_byte+1
     pla
     jmp io_put_const_string
