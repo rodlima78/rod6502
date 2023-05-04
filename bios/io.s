@@ -2,6 +2,7 @@
 
 .data
 io_cb_put_char: .res 2
+io_cb_get_char: .res 2
 
 .rodata
 IO_HEXASCII: .byte "0123456789ABCDEF"
@@ -85,4 +86,58 @@ io_put_const_string:
     ply
     pla
     plx
+    rts
+
+; =============================================
+io_get_char:
+    jmp (io_cb_get_char)
+
+; =============================================
+; output: A: parsed byte
+; success: C==0, error: C==1
+io_get_hex:
+    phx
+    jsr io_get_char
+    bcs @end
+    jsr parse_hex_nibble    ; parse most significant nibble
+    bcs @end
+    asl                     ; shift nibble low to high
+    asl
+    asl
+    asl
+    pha                     ; save it
+    jsr io_get_char
+    bcs @end_pop            ; return in case of errors in get_char
+    jsr parse_hex_nibble    ; parse the least significant nibble
+    bcs @end_pop
+    tsx
+    ora $0100+1,x   ; 'or' with the high nibble on stack
+@end_pop:
+    plx             ; pop the high nibble from the stack
+@end:
+    plx
+    rts
+
+; input: A: 4-bit hex
+; output: A: 0 to 15
+; success: C==0, error: C==1
+parse_hex_nibble:
+    sec
+    sbc #'0'    ; A = A-'0'
+    bcc @bad    ; A < 0  -> bad
+    cmp #10     ; A < 10 -> ok
+    bcc @ok
+    sbc #('A'-'0'-10) ; A = (A-'0')+'0'-'A'+10 == A-'A'+10
+    cmp #10
+    bcc @bad    ; A < 10 -> bad
+    cmp #16     ; A < 16 -> ok
+    bcc @ok
+    sbc #('a'-'A') ; A = ((A-'0')+'0'-'A'+10)+'A'-'a' == A-'a'+10
+    cmp #10
+    bcc @bad    ; A < 0 -> bad
+    cmp #16     ; A < 16 -> ok
+    bcc @ok
+@bad:
+    sec         ; indicate failure
+@ok:
     rts

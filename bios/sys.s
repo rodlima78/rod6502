@@ -23,7 +23,10 @@ sys_exit:
 
 import_table:
     ; must be sorted in ascii order
+    defsymbol io_cb_get_char
     defsymbol io_cb_put_char
+    defsymbol io_get_char
+    defsymbol io_get_hex
     defsymbol io_put_char
     defsymbol io_put_const_string
     defsymbol io_put_hex
