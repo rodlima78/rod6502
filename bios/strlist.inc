@@ -3,5 +3,5 @@
 .globalzp strlist_len
 .globalzp strlist_cb_found
 .globalzp strlist_cb_not_found
-.globalzp strlist_cb_read_byte
+.globalzp strlist_cb_get_char
 .global process_strlist

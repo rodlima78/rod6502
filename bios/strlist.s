@@ -5,7 +5,7 @@ strlist_ptr: .res 2
 strlist_len: .res 2
 strlist_cb_found: .res 2
 strlist_cb_not_found: .res 2
-strlist_cb_read_byte: .res 2
+strlist_cb_get_char: .res 2
 strlist: .res 2
 
 .code
@@ -15,7 +15,7 @@ strlist: .res 2
 ; strlist_cb_found: called for each string found, ptr points to matched list item,
 ;                   Y points to the first byte after end of item string
 ; strlist_cb_not_found: called for each string not found
-; strlist_cb_read_byte: called when a byte is needed, returned in A
+; strlist_cb_get_char: called when a byte is needed, returned in A
 ; C==1, error
 process_strlist:
     clc
@@ -45,13 +45,13 @@ process_strlist:
 
     ldy #1  ; point to first character
 @find_newchar:
-    ; emulate 'jsr (strlist_cb_read_byte)'
-    lda #>(@after_read_byte-1)
+    ; emulate 'jsr (strlist_cb_get_char)'
+    lda #>(@after_get_char-1)
     pha
-    lda #<(@after_read_byte-1)
+    lda #<(@after_get_char-1)
     pha
-    jmp (strlist_cb_read_byte)
-@after_read_byte:
+    jmp (strlist_cb_get_char)
+@after_get_char:
     bcs @end             ; read byte has errors? bail
 @find_char:
     cmp (strlist_ptr),y

@@ -142,7 +142,7 @@ end_block:
     jmp start_block
 
 ; return a: byte read
-xmodem_read_byte:
+xmodem_get_char:
     lda next_data_in_block
     cmp #128        ; no more data in this block?
     bne @has_more_data   ; process end of block

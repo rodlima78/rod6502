@@ -93,7 +93,7 @@ parse_cmd:
 
     ; Now let's compare the cmd string against the commands we define
 
-    ; our pointer to the character to be returned by item_read_byte
+    ; our pointer to the character to be returned by item_get_char
     stz idx_cmd_buffer
     
     ; just one item
@@ -116,16 +116,16 @@ parse_cmd:
     lda #>item_not_found
     sta strlist_cb_not_found+1
 
-    lda #<item_read_byte
-    sta strlist_cb_read_byte
-    lda #>item_read_byte
-    sta strlist_cb_read_byte+1
+    lda #<item_get_char
+    sta strlist_cb_get_char
+    lda #>item_get_char
+    sta strlist_cb_get_char+1
 
     jsr process_strlist
     rts
 
-item_read_byte:
-    ldx idx_cmd_buffer         ; strlist_cb_read_byte doesn't require us to preserve X
+item_get_char:
+    ldx idx_cmd_buffer         ; strlist_cb_get_char doesn't require us to preserve X
     lda CMD_BUFFER,x
     cmp #' '    ; space marks the end of the command, the rest is parameters
     bne @ret

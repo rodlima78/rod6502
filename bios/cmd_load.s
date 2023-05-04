@@ -113,7 +113,7 @@ cmd_load:
 .code
     ldy #0
 @loop_magic:
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     cmp @marker,y
     beq @magic_ok
     jmp load_error
@@ -123,7 +123,7 @@ cmd_load:
     bne @loop_magic
 
     ; read mode LSB
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     ; process cpu2 field
     pha
     and #$F0 ; leave only cpu2 field
@@ -145,7 +145,7 @@ cmd_load:
     sta seg_align
 
     ; read mode MSB -------------
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta load_flags      ; save flags
     and #%10110100      ; CPU=6502(0),size=16bit(0),obj=exec(0),chain=no(0)
     bne load_error
@@ -153,7 +153,7 @@ cmd_load:
     ; read segment info (tbase, tlen, dbase, dlen, bbase, blen, zbase, zlen, slen) ---
     ldx #0
 @loop_seginfo:
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta tbase,x
     inx
     cpx #18
@@ -177,12 +177,12 @@ cmd_load:
 
     ; read header options (ignore them)
 @read_header_option:
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     beq @end_header_options  ; olen==0? end of optional options
     dea                      ; olen includes 'olen' and 'otype', but the former was read already
     tax
 @loop_header_option:
-    jsr xmodem_read_byte       ; ignore data
+    jsr xmodem_get_char       ; ignore data
     dex
     bne @loop_header_option
     bra @read_header_option ; go read next header option
@@ -213,10 +213,10 @@ read_dataseg:
     ; 4. parse import list --------------------------------------
 read_imports:
     ; receive number of imports to read
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta len
     sta strlist_len
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta len+1
     sta strlist_len+1
 
@@ -249,10 +249,10 @@ read_imports:
     lda #>@item_not_found
     sta strlist_cb_not_found+1
 
-    lda #<xmodem_read_byte
-    sta strlist_cb_read_byte
-    lda #>xmodem_read_byte
-    sta strlist_cb_read_byte+1
+    lda #<xmodem_get_char
+    sta strlist_cb_get_char
+    lda #>xmodem_get_char
+    sta strlist_cb_get_char+1
 
     jsr process_strlist
     bcs load_error
@@ -294,9 +294,9 @@ read_datarel:
     ; 7. read exported globals list ------------------------------
 read_exported_globals_list:
     ; receive number of exports to read
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta strlist_len 
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta strlist_len+1
 
     ; set up the stringlist processing to
@@ -318,10 +318,10 @@ read_exported_globals_list:
     lda #>@item_not_found
     sta strlist_cb_not_found+1
 
-    lda #<xmodem_read_byte
-    sta strlist_cb_read_byte
-    lda #>xmodem_read_byte
-    sta strlist_cb_read_byte+1
+    lda #<xmodem_get_char
+    sta strlist_cb_get_char
+    lda #>xmodem_get_char
+    sta strlist_cb_get_char+1
 
     jsr process_strlist
     bcs @load_error1
@@ -333,7 +333,7 @@ read_exported_globals_list:
 @item_found:
     ; Use our relocation function to write the final symbol addres
     ; to the address in the table
-    jsr xmodem_read_byte ; read the segment id
+    jsr xmodem_get_char ; read the segment id
     asl
     tax                  ; X = segID*2, needed by segid_generic
 
@@ -349,9 +349,9 @@ read_exported_globals_list:
     sta cur_rel+1
 
     ; Initialize it with the src address
-    jsr xmodem_read_byte ; read src addr LSB
+    jsr xmodem_get_char ; read src addr LSB
     sta (cur_rel)        ; save it
-    jsr xmodem_read_byte ; read src addr MSB
+    jsr xmodem_get_char ; read src addr MSB
     ldy #1
     sta (cur_rel),y      ; save it
 
@@ -365,11 +365,11 @@ read_exported_globals_list:
 
 @item_not_found:
 @loop:
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     bne @loop  ; read till end of string
-    jsr xmodem_read_byte ; swallow segid
-    jsr xmodem_read_byte ; swallow addr LSB
-    jsr xmodem_read_byte ; swallow addr LSB
+    jsr xmodem_get_char ; swallow segid
+    jsr xmodem_get_char ; swallow addr LSB
+    jsr xmodem_get_char ; swallow addr LSB
     rts ; will process next item
 
 o65_finished:
@@ -438,7 +438,7 @@ read_segrel:
     sty cur_rel+1
 
 process_relocation:
-    jsr xmodem_read_byte ; get offset byte
+    jsr xmodem_get_char ; get offset byte
     bne @do_reloc      ; not zero ? do relocation
     rts                ; zero? no more relocations
 @do_reloc:
@@ -467,7 +467,7 @@ segid_jumptable:
     .addr segid_generic ; bss
     .addr segid_generic ; zeropage
 .code
-    jsr xmodem_read_byte    ; read typebyte|segID
+    jsr xmodem_get_char    ; read typebyte|segID
     pha                     ; push it to stack
     and #$0f                ; A=segID
     cmp #6                  ; index < 6?
@@ -496,7 +496,7 @@ segid_undefined:
     sta cur_dst_import+1
 
     ; add index*2 (as table slot size is 2 bytes)
-    jsr xmodem_read_byte ; read index LSB
+    jsr xmodem_get_char ; read index LSB
     asl ; *2
     php ; save carry bit
     clc
@@ -505,7 +505,7 @@ segid_undefined:
     bcc @skip_msb
     inc cur_dst_import+1
 @skip_msb:
-    jsr xmodem_read_byte ; read index MSB
+    jsr xmodem_get_char ; read index MSB
     plp ; restore carry bit from LSB*2
     rol ; *2, and include carry bit from LSB*2
     ; clc must not have carry bit. If set, we'll have unavoidable problems.
@@ -551,7 +551,7 @@ segid_absolute:
     lda #%1000000      ; page-wise reloc bit
     bit load_flags     ; is it set?
     bne @end           ; no, use bytewire reloc (hot path)
-    jsr xmodem_read_byte ; swallow low_byte
+    jsr xmodem_get_char ; swallow low_byte
 @end:
     rts
 
@@ -581,7 +581,7 @@ parse_segdata:
     rts ; OK: Z==1
 
 @read_seg:
-    jsr xmodem_read_byte
+    jsr xmodem_get_char
     sta (ptr)
     ; increment base
     inc ptr
@@ -630,7 +630,7 @@ relocate:
     bit load_flags       ; is it set?
     clc                  ; keep carry reset in case doing page-wise reloc
     bne @_incr_msb       ; yes, use page-wise reloc (cold path)
-    jsr xmodem_read_byte ; no, read len_byte (hot path)
+    jsr xmodem_get_char  ; no, read len_byte (hot path)
     sta len
     txa                  ; get offset LSB
     adc len              ; add it to len_byte, only carry matters
