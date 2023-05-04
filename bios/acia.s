@@ -153,7 +153,7 @@ acia_purge:
 @retry:
     lda #1      ; 1s timeout
     jsr acia_get_char
-    beq @retry  ; got char (no error)? get next char
+    bcc @retry  ; got char (no error)? get next char
     bit #%1000  ; timeout?
     beq @retry  ; no (some other error)? try again
 @end:           ; yes, channel is empty
@@ -170,6 +170,7 @@ timeout_state: .res 1
 .code
 ; input: A -> timeout (seconds)
 ; return: A -> character read
+; C==1 in case of errors
 acia_get_char:
     ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
     phx
@@ -225,7 +226,8 @@ acia_get_char:
     ;          Frame error (bit1==1)
     ;          Parity error (bit0==1)
     and #%00001111
-    php           ; keep flags for recv result, Z==1 ? ok : failure
+    clc
+    adc #$FF        ; if A==0, C==0 or in case of errors, C==1
 
     stz VIA_ACR   ; disable Timer2 pulse counter
 
@@ -233,7 +235,6 @@ acia_get_char:
     tsb ACIA_CMD
 
     lda ACIA_DATA ; read data even in case of errors, to reset recv error bits
-    plp                 
 
     rts
 

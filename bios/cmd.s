@@ -56,7 +56,7 @@ parse_cmd:
 @get_char:
     lda #0 ; no timeout
     jsr acia_get_char
-    bne @comm_error
+    bcs @comm_error
     cmp #$0d            ; line feed?
     beq @got_cmd        ; yes, command was entered
     cmp #$08            ; backspace?

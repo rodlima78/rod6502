@@ -46,7 +46,7 @@ start_block:
     ; start receiving block
     lda #3            ; 3s timeout (spec says it must be 10s)
     jsr acia_get_char ; get start-of-header or end-of-transfer
-    bne xmodem_error
+    bcs xmodem_error
     cmp #EOT            ; end of transfer?
     beq @file_received  ; yes, we're good
     cmp #SOH            ; no, is it start of header?
@@ -54,13 +54,13 @@ start_block:
 
     lda #1             ; 1s timeout
     jsr acia_get_char ; block number
-    bne xmodem_error
+    bcs xmodem_error
     cmp next_block    ; not what we expect?
     bne xmodem_error
 
     lda #1             ; 1s timeout
     jsr acia_get_char ; 255 - block number
-    bne xmodem_error
+    bcs xmodem_error
     clc
     adc next_block    ; (block_number + (255-block_number))%256 == 255
     cmp #255
@@ -129,7 +129,7 @@ xmodem_error:
 end_block:
     lda #1            ; 1s timeout
     jsr acia_get_char ; yes, get checksum
-    bne xmodem_error
+    bcs xmodem_error
     cmp checksum
     bne xmodem_error
 
@@ -151,7 +151,7 @@ xmodem_read_byte:
 @has_more_data:
     lda #1             ; 1s timeout
     jsr acia_get_char
-    bne xmodem_error
+    bcs xmodem_error
 
     inc next_data_in_block
 
@@ -176,7 +176,7 @@ xmodem_skip_block:
 @loop:
     beq @end ; reached end of block? return
     jsr acia_get_char
-    bne xmodem_error
+    bcs xmodem_error
 
     ; update the checksum
     clc
