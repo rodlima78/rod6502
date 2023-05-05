@@ -2,6 +2,7 @@
 .include "cmd.inc"
 .include "lcd.inc"
 .include "via.inc"
+.include "io.inc"
 
 .import post
 .export after_post

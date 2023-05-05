@@ -20,17 +20,11 @@ cmd_run:
     jmp (ptr_app_entrypoint)  ; yes, jump to app's entry point
 
 @error_not_loaded:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "No application loaded"
-    jsr io_pop_put_byte
     jmp cmd_loop
 
 @error_no_main:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "Application doesn't define a 'main' entry point"
-    jsr io_pop_put_byte
     jmp cmd_loop

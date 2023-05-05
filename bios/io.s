@@ -1,8 +1,9 @@
 .include "io.inc"
+.include "sys.inc"
+.include "lcd.inc"
 
-.data
-io_cb_put_byte: .res 2
-io_cb_get_byte: .res 2
+.export io_clear_put_stack
+.export io_clear_get_stack
 
 .rodata
 IO_HEXASCII: .byte "0123456789ABCDEF"
@@ -10,111 +11,122 @@ IO_HEXASCII: .byte "0123456789ABCDEF"
 .zeropage
 ptr: .res 2
 
+.data
+.struct Stack
+    top     .addr 1 ; top item
+    idxfree .res  1 ; index (in bytes) to next free slot
+    data    .addr 8 ; 8 slots
+.endstruct
+
+io_put_stack: .tag Stack
+io_get_stack: .tag Stack
+
 STACK_SEG = $0100
 
 .code
 
-.macro io_push_cb cb
-    ;                         0   1  2
-    ; stack:                 <S> Rl Rh
+.macro io_push_cb stack
     phx
     pha               
-    ;                   0  1  2   3  4
-    ; stack:           <S> A  X  Rl Rh
-    phx
-    pha
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X  A  X  Rl Rh 
-    
-    tsx
+    ;                   0  1 2  3  4
+    ; stack:           <S> A X Rl Rh
 
-    lda STACK_SEG+5,x ; copy Rl
+    ; Get ptr to new cb function and update return addr
+    tsx
+    lda STACK_SEG+3,x  ; copy Rl
     sta ptr
     clc
-    adc #2            ; must return right after the addr parameter
+    adc #2             ; must return right after the addr parameter
     sta STACK_SEG+3,x
-    lda STACK_SEG+6,x ; copy Rh
+    lda STACK_SEG+4,x ; copy Rh
     sta ptr+1
     adc #0            ; propagate carry from Rl+2
     sta STACK_SEG+4,x
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X Rl Rh  Rl Rh 
 
-    lda cb
-    sta STACK_SEG+5,x
-    lda cb+1
-    sta STACK_SEG+6,x
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X Rl Rh  Cl Ch 
+    ; push current callback on stack
+    ldx stack+Stack::idxfree
+    cpx #.sizeof(Stack::data)   ; idxfree >= sizeof(data)?
+    bcs abort_overflow          ; yes, overflow
+
+    lda stack+Stack::top        ; push LSB
+    sta stack+Stack::data,x
+    lda stack+Stack::top+1      ; push MSB
+    sta stack+Stack::data+1,x
+    inx
+    inx
+    stx stack+Stack::idxfree    ; save index to next free slot
     
     ; Set the current callback function
     phy
     ldy #1
     lda (ptr),y 
-    sta cb 
+    sta stack+Stack::top
     iny
     lda (ptr),y
-    sta cb+1
+    sta stack+Stack::top+1
     ply
-
     pla
     plx
-    ;                  0   1  2   3  4
-    ; stack:          <S> Rl Rh  Cl Ch 
 .endmacro
 
-.macro io_pop_cb cb
-    ;                  0   1  2   3  4
-    ; stack:          <S> Rl Rh  Cl Ch 
+.macro io_pop_cb stack
+    pha
     phx
-    pha               
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X Rl Rh  Cl Ch 
-    tsx
 
-    lda STACK_SEG+5,x ; copy Cl
-    sta cb
-    lda STACK_SEG+6,x ; copy Ch
-    sta cb+1
+    ldx stack+Stack::idxfree
+    cpx #2                  ; idxfree < 2?
+    bcc abort_underflow     ; yes, underflow
 
-    lda STACK_SEG+3,x ; copy Rl
-    sta STACK_SEG+5,x
-    lda STACK_SEG+4,x ; copy Rh
-    sta STACK_SEG+6,x
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X Rl Rh  Rl Rh 
-    lda STACK_SEG+1,x ; copy A
-    sta STACK_SEG+3,x
-    lda STACK_SEG+2,x ; copy X
-    sta STACK_SEG+4,x
-    ;              0  1 2  3  4   5  6
-    ; stack:      <S> A X  A  X  Rl Rh 
-    pla
+    dex
+    dex
+    lda stack+Stack::data,x     ; pop LSB from stack,
+    sta stack+Stack::top        ; and set it to top LSB
+    lda stack+Stack::data+1,x   ; pop MSB from stack,
+    sta stack+Stack::top+1      ; and set it to top MSB
+
+    stx stack+Stack::idxfree    ; update free slot
     plx
     pla
-    plx
-    ;                         0   1  2
-    ; stack:                 <S> Rl Rh
 .endmacro
 
 ; =============================================
 io_push_put_byte:
-    io_push_cb io_cb_put_byte
+    io_push_cb io_put_stack
     rts
 
 ; =============================================
 io_pop_put_byte:
-    io_pop_cb io_cb_put_byte
+    io_pop_cb io_put_stack
     rts
+
+abort_overflow:
+    jsr sys_abort
+    .asciiz "EOVERFLOW iostack"
+
+abort_underflow:
+    jsr sys_abort
+    .asciiz "EUNDERFLOW iostack"
 
 ; =============================================
 io_push_get_byte:
-    io_push_cb io_cb_get_byte
+    io_push_cb io_get_stack
     rts
 
 ; =============================================
 io_pop_get_byte:
-    io_pop_cb io_cb_get_byte
+    io_pop_cb io_get_stack
+    rts
+
+io_clear_put_stack:
+    stz io_put_stack+Stack::top
+    stz io_put_stack+Stack::top+1
+    stz io_put_stack+Stack::idxfree
+    rts
+
+io_clear_get_stack:
+    stz io_get_stack+Stack::top
+    stz io_get_stack+Stack::top+1
+    stz io_get_stack+Stack::idxfree
     rts
 
 ; =============================================
@@ -143,7 +155,7 @@ io_nibble:
     tay
     lda IO_HEXASCII,y
 io_put_byte:
-    jmp (io_cb_put_byte) ; tail-call optimization
+    jmp (io_put_stack+Stack::top) ; tail-call optimization
 
 ; =============================================
 ; input: string comes right after jsr
@@ -194,7 +206,7 @@ io_put_const_string:
 
 ; =============================================
 io_get_byte:
-    jmp (io_cb_get_byte)
+    jmp (io_get_stack+Stack::top)
 
 ; =============================================
 ; output: A: parsed byte

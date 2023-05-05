@@ -6,6 +6,8 @@
 .include "io.inc"
 
 .export cmd_get_byte
+.import io_clear_put_stack
+.import io_clear_get_stack
 
 PROMPT = '>'
 
@@ -36,6 +38,15 @@ cmd_loop:
     lda #0
     sta VIA_IO_B
 
+    jsr io_clear_put_stack
+    jsr io_clear_get_stack
+
+    ; We use acia for I/O
+    jsr io_push_put_byte
+    .addr acia_put_byte
+    jsr io_push_get_byte
+    .addr acia_get_byte
+
     jsr parse_cmd
 
     lda pcmd+1      ; when testing for fn pointers, we only have to test MSB
@@ -56,11 +67,8 @@ cmd_jumptable:
 
 .code
 parse_cmd:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "\r\n"
-    jsr io_pop_put_byte
 
 @prompt:
     lda #PROMPT
@@ -86,38 +94,26 @@ parse_cmd:
     bra @get_byte
 
 @buffer_overflow:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "\r\ncommand too large\r\n"
-    jsr io_pop_put_byte
     bra @prompt
 
 @comm_error:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "\r\ncommunication error\r\n"
-    jsr io_pop_put_byte
     bra @prompt
 
 @backspace:
     cpx #0
     beq @get_byte
     dex
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "\x08 \x08"
-    jsr io_pop_put_byte
     bra @get_byte
 
 @got_cmd:
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "\r\n"
-    jsr io_pop_put_byte
     stz CMD_BUFFER,x ; NUL marks end of buffer
 
     ; Now let's compare the cmd string against the commands we define
@@ -177,10 +173,7 @@ item_not_found:
     stz pcmd
     stz pcmd+1
 
-    jsr io_push_put_byte
-    .addr acia_put_byte
     jsr io_put_const_string
     .asciiz "invalid command\r\n"
-    jsr io_pop_put_byte
     rts
 
