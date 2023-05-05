@@ -5,7 +5,8 @@
 .include "strlist.inc"
 .include "io.inc"
 
-.export cmd_get_byte
+.export cmdline_get_byte
+.export cmdline_put_back
 .import io_clear_put_stack
 .import io_clear_get_stack
 
@@ -21,7 +22,7 @@ pcmd: .res 2
 
 .code
 
-cmd_get_byte:
+cmdline_get_byte:
     phx
     ldx idx_cmd_buffer
     lda CMD_BUFFER,x
@@ -31,6 +32,10 @@ cmd_get_byte:
 @end:
     plx
     clc
+    rts
+
+cmdline_put_back:
+    dec idx_cmd_buffer
     rts
 
 cmd_loop:
@@ -62,6 +67,7 @@ cmd_loop:
 .endmacro
 cmd_jumptable:
     def_cmd_handler load, cmd_load
+    def_cmd_handler mdump, cmd_mdump
     def_cmd_handler run, cmd_run
     .byte 0 ; end of table
 
@@ -150,7 +156,7 @@ parse_cmd:
     rts
 
 item_get_byte:
-    jsr cmd_get_byte
+    jsr cmdline_get_byte
     cmp #' '    ; space marks the end of the command, the rest is parameters
     bne @ret
     lda #0
