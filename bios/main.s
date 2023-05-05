@@ -31,9 +31,9 @@ after_post:
 .endif
 
 post_ok:
+    jsr init_mem   ; run first to initialize heap and data seg
     jsr init_irq
     jsr lcd_init
-    jsr init_mem
     stz app_loaded ; no app loaded yet
 
     jmp cmd_loop

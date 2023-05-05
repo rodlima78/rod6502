@@ -10,6 +10,7 @@
 .import import_table
 .export save_stack
 .export ptr_app_entrypoint
+.import fill_mem
 
 SOH = $01
 EOT = $04
@@ -384,7 +385,11 @@ o65_finished:
     lda #%10
     bit load_flags
     beq @skip_zero_bss
-    jsr zero_bss
+
+    ldx #dest_bbase
+    ldy #blen
+    lda #0  ; fill bss with zeros
+    jsr fill_mem
 
 @skip_zero_bss:
     jsr io_push_put_byte
@@ -398,37 +403,6 @@ o65_finished:
     sta app_loaded
 
     jmp cmd_loop
-
-; ===============================================
-zero_bss:
-    lda dest_bbase
-    sta ptr
-    lda dest_bbase+1
-    sta ptr+1
-
-    pha
-@loop:
-    ; exit loop when blen==0
-    lda blen
-    bne @skip_blen_msb
-    lda blen+1
-    beq @end
-    ; decrement blen
-    dec blen+1
-@skip_blen_msb:
-    dec blen
-    ; zero out memory
-    lda #0
-    sta (ptr)
-    ; increment bbase for next byte to be zeroed out
-    inc ptr
-    bne @skip_bbase_msb
-    inc ptr+1
-@skip_bbase_msb:
-    bra @loop
-@end:
-    pla
-    rts
 
 ; ===============================================
 ; x: zp ptr to dest seg

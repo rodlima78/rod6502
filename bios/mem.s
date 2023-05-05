@@ -3,6 +3,7 @@
 .include "io.inc"
 
 .export init_mem
+.export fill_mem
 
 .segment "HEAP"
 .align 2
@@ -10,6 +11,7 @@ heap_head: .res 0
 
 .zeropage
 ptr: .res 2
+len: .res 2
 
 .code
 ; ================================================================
@@ -188,10 +190,96 @@ sys_free:
     sta (0,x)
     rts
 
+; ================================================================
+; input: X: zp pointer buffer to be filled
+;        Y: zp pointer to 16-bit buffer length
+;        A: fill byte
+fill_mem:
+    pha     ; push fill byte
+    ; load up addr
+    lda 0,x
+    sta ptr
+    lda 1,x
+    sta ptr+1
+
+    pla     ; pop fill byte
+    phx     ; push zp pointer to buffer
+    tax     ; X -> fill byte
+
+    ; save addr on stack, to be restored later
+    lda ptr+1
+    pha
+    lda ptr
+    pha
+
+    ; load up len, also saving it on stack, to be restored later
+    lda 1,y
+    pha
+    sta len+1
+    lda 0,y
+    pha
+    sta len
+
+@loop:
+    ; exit loop when len==0
+    lda len
+    bne @skip_len_msb
+    lda len+1
+    beq @end
+    ; decrement len
+    dec len+1
+@skip_len_msb:
+    dec len
+    ; fill in memory
+    txa
+    sta (ptr)
+    ; increment bbase for next byte to be zeroed out
+    inc ptr
+    bne @skip_base_msb
+    inc ptr+1
+@skip_base_msb:
+    bra @loop
+@end:
+
+    ; restore len
+    pla
+    sta 0,y
+    pla
+    sta 1,y
+
+    ; get the pointer to addr directly from stack (jump over addr on stack)
+    tsx
+    lda $0100+3,x
+    tax
+
+    ; restore addr
+    pla
+    sta 0,x
+    pla
+    sta 1,x
+
+    plx ; restore stack
+
+    rts
 
 ; ================================================================
 init_mem:
     pha
+
+    ; zero out data segment
+    lda #<__DATA_RUN__
+    sta ptr
+    lda #>__DATA_RUN__
+    sta ptr+1
+    ldx #ptr
+
+    lda #<__DATA_SIZE__
+    sta len
+    lda #>__DATA_SIZE__
+    sta len+1
+    ldy #len
+    lda #0
+    jsr fill_mem
 
     LAST_SEG_ADDR = __RAM_START__+__RAM_SIZE__-2
 
