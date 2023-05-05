@@ -8,6 +8,7 @@
 .import cmd_loop
 .export import_table
 .import save_stack
+.importzp app_loaded
 
 STACK_SEG = $0100
 
@@ -19,6 +20,9 @@ sys_exit:
     ; restore stack
     ldx save_stack
     txs
+
+    ; app not loaded anymore
+    stz app_loaded
 
     jmp cmd_loop
 
