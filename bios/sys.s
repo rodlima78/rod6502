@@ -3,17 +3,50 @@
 .include "mem.inc"
 .include "io.inc"
 .include "acia.inc"
+.include "via.inc"
 
 .import cmd_loop
 .export import_table
 .import save_stack
 
+STACK_SEG = $0100
+
+.segment "ZPTMP": zeropage
+abort_msg: .res 2
+
+.code
 sys_exit:
     ; restore stack
     ldx save_stack
     txs
 
     jmp cmd_loop
+
+; =====================================================
+; asciiz must follow jsr sys_abort
+sys_abort:
+    tsx
+    lda STACK_SEG+1,x
+    sta abort_msg 
+    lda STACK_SEG+2,x
+    sta abort_msg+1
+
+    ldy #1                      ; ADDR_BUFFER points to 1 byte before the start of string,
+@send_char:
+    lda (abort_msg),y
+    beq @end                    ; end of string (A==0)? go to end
+    jsr lcd_put_byte            ; send character
+    iny
+    bne @send_char              ; string not too long (y didn't wrap around)? continue
+
+@end:
+    ; turn on red led
+    lda #(VIA_LED_GREEN+VIA_LED_RED)
+    tsb VIA_DIR_B
+    lda #VIA_LED_RED
+    sta VIA_IO_B
+
+    stp
 
 .rodata
 .macro defsymbol sym
@@ -37,6 +70,7 @@ import_table:
     defsymbol io_put_hex
     defsymbol lcd_put_byte
     defsymbol lcd_put_hex
+    defsymbol sys_abort
     defsymbol sys_exit
     defsymbol sys_free
     defsymbol sys_malloc
