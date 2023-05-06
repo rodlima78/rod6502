@@ -91,8 +91,6 @@ start_block:
     lda #$ff
     sta retries
 
-    jsr xmodem_deinit
-    
     ; Z==0 and A==0: end of file
     lda #1
     php
@@ -117,8 +115,8 @@ xmodem_error:
     lda #CAN
     jsr io_put_byte
     jsr io_put_byte
-
     jsr acia_purge
+
     jsr io_put_const_string
     .asciiz " FAILED"
 
@@ -207,9 +205,8 @@ xmodem_deinit:
     lda #CAN    ; no, cancel transfer
     jsr io_put_byte
     jsr io_put_byte
-    jsr acia_purge
 @done:
-
+    jsr acia_purge
     jsr io_pop_get_byte
 
     rts

@@ -12,6 +12,8 @@
 .export ptr_app_entrypoint
 .import fill_mem
 
+.feature string_escapes
+
 SOH = $01
 EOT = $04
 ACK = $06
@@ -118,7 +120,9 @@ cmd_load:
     jsr xmodem_get_byte
     cmp @marker,y
     beq @magic_ok
-    jmp load_error
+
+    jsr load_errormsg
+    .asciiz "invalid header"
 @magic_ok:
     iny
     cpy #(.sizeof(@marker)+.sizeof(@magic)+.sizeof(@version))
@@ -132,7 +136,8 @@ cmd_load:
     cmp #$30 ; is it 6502 (0), 65C02 (1) or 65SC02 (2)?
     bcc @cpu_ok
     pla
-    bra load_error
+    jsr load_errormsg
+    .asciiz "cpu not supported"
 @cpu_ok:
     pla
 
@@ -150,8 +155,10 @@ cmd_load:
     jsr xmodem_get_byte
     sta load_flags      ; save flags
     and #%10110100      ; CPU=6502(0),size=16bit(0),obj=exec(0),chain=no(0)
-    bne load_error
-
+    beq :+
+    jsr load_errormsg
+    .asciiz "o65 binary not supported"
+:
     ; read segment info (tbase, tlen, dbase, dlen, bbase, blen, zbase, zlen, slen) ---
     ldx #0
 @loop_seginfo:
@@ -165,17 +172,24 @@ cmd_load:
     ldx #dest_tbase
     ldy #tlen
     jsr sys_malloc
-    bne load_error
-
+    beq :+
+    jsr load_errormsg
+    .asciiz "error allocating memory for text segment"
+:   
     ldx #dest_dbase
     ldy #dlen
     jsr sys_malloc
-    bne load_error
-
+    beq :+
+    jsr load_errormsg
+    .asciiz "error allocating memory for data segment"
+:
     ldx #dest_bbase
     ldy #blen
     jsr sys_malloc
-    bne load_error
+    beq :+
+    jsr load_errormsg
+    .asciiz "error allocating memory for bss segment"
+:
 
     ; read header options (ignore them)
 @read_header_option:
@@ -195,11 +209,28 @@ read_textseg:
     ldx #dest_tbase
     ldy #tlen
     jsr parse_segdata
-    bne load_error
-    bra read_dataseg
+    beq read_dataseg
+    jsr load_errormsg
+    .asciiz "error receiving text data"
+
+load_errormsg:
+    jsr xmodem_deinit
+
+    jsr io_put_const_string
+    .asciiz "FAILED\r\n"
+
+    tsx
+    inx
+    jsr io_put_const_string_stack
+
+    ; restore stack pointer
+    ldx save_stack
+    txs
+    jmp cmd_loop
 
 load_error:
     jsr xmodem_deinit
+
     ; restore stack pointer
     ldx save_stack
     txs
@@ -210,7 +241,9 @@ read_dataseg:
     ldx #dest_dbase
     ldy #dlen
     jsr parse_segdata
-    bne load_error
+    beq read_imports
+    jsr load_errormsg
+    .asciiz "error receiving data data"
 
     ; 4. parse import list --------------------------------------
 read_imports:
@@ -228,7 +261,10 @@ read_imports:
     rol len+1
     ldy #len
     jsr sys_malloc
-    bne load_error
+    beq :+
+    jsr load_errormsg
+    .asciiz "error allocating memory for import table"
+:
 
     ; start filling up first import
     lda dest_imports
@@ -257,9 +293,9 @@ read_imports:
     sta strlist_cb_get_byte+1
 
     jsr process_strlist
-    bcs load_error
-
-    bra read_textrel
+    bcc read_textrel
+    jsr load_errormsg
+    .asciiz "error processing import list"
 
 @item_found:
     ; Save the import address to the dst import table
@@ -281,7 +317,8 @@ read_imports:
     rts
 
 @item_not_found:
-    jmp load_error
+    jsr load_errormsg
+    .asciiz "imported symbol not found"
 
     ; 5. do text relocation --------------------------------------
 read_textrel:
@@ -326,14 +363,13 @@ read_exported_globals_list:
     sta strlist_cb_get_byte+1
 
     jsr process_strlist
-    bcs @load_error1
-    bra o65_finished
+    bcc o65_finished
 
-@load_error1:
-    jmp load_error
+    jsr load_errormsg
+    .asciiz "error processing exported globals"
 
 @item_found:
-    ; Use our relocation function to write the final symbol addres
+    ; Use our relocation function to write the final symbol address
     ; to the address in the table
     jsr xmodem_get_byte ; read the segment id
     asl
@@ -448,7 +484,8 @@ segid_jumptable:
     cmp #6                  ; index < 6?
     bcc @process_segid      ; yes, process segID
     ; no need to restore stack, load_error takes care of it
-    jmp load_error          ; no, out of bounds: error
+    jsr load_errormsg       ; no, out of bounds: error
+    .asciiz "invalid segID"
 @process_segid:
     asl             ; A = segID*2: index into jumptable
     tax
@@ -585,7 +622,8 @@ relocate:
     bit #TYPE_LOW
     bne @type_low
 
-    jmp load_error
+    jsr load_errormsg
+    .asciiz "invalid relocation type"
 
 @type_word:
     ; load the word directly from the segment
