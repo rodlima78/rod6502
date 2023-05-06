@@ -156,8 +156,7 @@ acia_purge:
     bcc @retry  ; got char (no error)? get next char
     bit #%1000  ; timeout?
     beq @retry  ; no (some other error)? try again
-@end:           ; yes, channel is empty
-    pla
+    pla          ; yes, channel is empty
     rts
 
 .zeropage
@@ -219,15 +218,14 @@ acia_get_byte_timeout:
     ora #%1000 ; bit3=1 -> timeout
 
 @check_errors:
-    plx ; x not needed anymore
-
     ; test for Timeout (bit3==1)
     ;          Overrun (bit2==1)
     ;          Frame error (bit1==1)
     ;          Parity error (bit0==1)
     and #%00001111
+    pha          ; push status
     clc
-    adc #$FF        ; if A==0, C==0 or in case of errors, C==1
+    adc #$FF      ; if A==0, C==0 or in case of errors, C==1
 
     stz VIA_ACR   ; disable Timer2 pulse counter
 
@@ -236,6 +234,11 @@ acia_get_byte_timeout:
 
     lda ACIA_DATA ; read data even in case of errors, to reset recv error bits
 
+    plx         ; pop status
+    bcc @noerror
+    txa         ; in case of errors return status instead
+@noerror:
+    plx         ; pop caller's x
     rts
 
 acia_get_byte:
