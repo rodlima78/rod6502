@@ -185,6 +185,7 @@ xmodem_skip_block:
     tax
 @loop:
     beq @end ; reached end of block? return
+    lda #1   ; 1s timeout
     jsr io_get_byte
     bcs xmodem_error
 
