@@ -80,7 +80,7 @@ parse_cmd:
 
 @prompt:
     lda #PROMPT
-    jsr acia_put_byte
+    jsr io_put_byte
 
     lda #VIA_LED_GREEN
     sta VIA_IO_B
@@ -96,7 +96,7 @@ parse_cmd:
     cpx #.sizeof(CMD_BUFFER) ; reached end of buffer space?
     beq @buffer_overflow     ; yes, show error
     sta CMD_BUFFER,x    ; no, append character to buffer
-    jsr acia_put_byte   ; echo it back
+    jsr io_put_byte   ; echo it back
     inx                 ; bump next address
     bra @get_byte
 

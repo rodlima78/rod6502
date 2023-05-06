@@ -39,9 +39,6 @@ xmodem_init:
     lda #10
     sta retries
 
-    jsr io_push_put_byte
-    .addr acia_put_byte
-
     jsr io_push_get_byte
     .addr acia_get_byte_timeout
 
@@ -214,6 +211,5 @@ xmodem_deinit:
 @done:
 
     jsr io_pop_get_byte
-    jsr io_pop_put_byte
 
     rts
