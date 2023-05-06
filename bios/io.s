@@ -23,6 +23,8 @@ io_get_stack: .tag Stack
 
 STACK_SEG = $0100
 
+buffer_last_byte: .res 1
+
 .code
 
 .macro io_push_cb stack
@@ -114,6 +116,16 @@ io_push_get_byte:
 
 ; =============================================
 io_pop_get_byte:
+    pha
+    jsr is_read_last_byte_enabled
+    bne @continue
+    dec io_get_stack+Stack::idxfree
+    dec io_get_stack+Stack::idxfree
+@continue:
+    pla
+    jmp io_pop_get_byte_impl
+
+io_pop_get_byte_impl:
     io_pop_cb io_get_stack
     rts
 
@@ -205,8 +217,48 @@ io_put_const_string:
     rts
 
 ; =============================================
-io_get_byte:
+tmp_get_byte:
     jmp (io_get_stack+Stack::top)
+io_get_byte:
+    jsr tmp_get_byte
+    sta buffer_last_byte
+    rts
+
+; Z==1 ? yes
+; thrashes A
+is_read_last_byte_enabled:
+    lda io_get_stack+Stack::top
+    cmp #<read_last_byte
+    bne @end
+    lda io_get_stack+Stack::top+1
+    cmp #>read_last_byte
+@end:
+    rts
+
+; =============================================
+io_get_putback:
+    ; check if called putback twice in a row
+    jsr is_read_last_byte_enabled
+    beq @error
+@continue:
+    jsr io_push_get_byte
+    .addr read_last_byte
+    rts
+@error:
+    jsr sys_abort
+    .asciiz "EUNDERFLOW ioget"
+
+read_last_byte:
+    ; sanity check
+    jsr is_read_last_byte_enabled
+    bne @error
+    jsr io_pop_get_byte_impl
+    lda buffer_last_byte
+    clc     ; signal success
+    rts
+@error:
+    jsr sys_abort
+    .asciiz "[E]read_last_byte"
 
 ; =============================================
 ; output: A: parsed byte
