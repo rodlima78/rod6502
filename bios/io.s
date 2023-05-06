@@ -170,15 +170,13 @@ io_put_byte:
     jmp (io_put_stack+Stack::top) ; tail-call optimization
 
 ; =============================================
-; input: string comes right after jsr
-io_put_const_string:
-    phx
-    ; stack: X Rl Rh
-    tsx
+; input: x = index into stack with the return address that
+;            is followed by the inlined string
+io_put_const_string_stack:
     pha
-    lda STACK_SEG+2,x
+    lda STACK_SEG,x
     sta ptr 
-    lda STACK_SEG+3,x
+    lda STACK_SEG+1,x
     sta ptr+1
 
     phy
@@ -200,19 +198,27 @@ io_put_const_string:
 
 @end:
     ; Y points to null terminator
-    ; S:(X+2) still points to the buffer address
+    ; S:X still points to the buffer address
     tya
     ; Adds Y to return address stored by jsr,
     ; to make it point to the null terminator, which is
     ; one byte before the actual return address, as expected by rts.
     clc
-    adc STACK_SEG+2,x
-    sta STACK_SEG+2,x
+    adc STACK_SEG,x
+    sta STACK_SEG,x
     bcc @skip_high
-    inc STACK_SEG+3,x
+    inc STACK_SEG+1,x
 @skip_high:
     ply
     pla
+    rts
+
+io_put_const_string:
+    phx
+    tsx
+    inx ; due to phx
+    inx ; due to phx
+    jsr io_put_const_string_stack
     plx
     rts
 

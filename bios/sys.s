@@ -75,6 +75,7 @@ import_table:
     defsymbol io_push_put_byte
     defsymbol io_put_byte
     defsymbol io_put_const_string
+    defsymbol io_put_const_string_stack
     defsymbol io_put_hex
     defsymbol lcd_put_byte
     defsymbol lcd_put_hex
