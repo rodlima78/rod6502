@@ -6,7 +6,6 @@
 .include "io.inc"
 
 .export cmdline_get_byte
-.export cmdline_put_back
 .import io_clear_put_stack
 .import io_clear_get_stack
 
@@ -34,10 +33,6 @@ cmdline_get_byte:
 @end:
     plx
     clc
-    rts
-
-cmdline_put_back:
-    dec idx_cmd_buffer
     rts
 
 cmd_loop:

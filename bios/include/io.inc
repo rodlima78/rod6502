@@ -6,6 +6,7 @@
 .global io_push_get_byte
 .global io_pop_get_byte
 .global io_get_putback
+.global io_get_skip_space
 
 .global io_get_byte
 .global io_get_hex

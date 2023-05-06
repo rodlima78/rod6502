@@ -67,6 +67,7 @@ import_table:
     defsymbol io_get_byte
     defsymbol io_get_hex
     defsymbol io_get_putback
+    defsymbol io_get_skip_space
     defsymbol io_pop_get_byte
     defsymbol io_pop_put_byte
     defsymbol io_push_get_byte

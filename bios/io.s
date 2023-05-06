@@ -309,3 +309,15 @@ parse_hex_nibble:
     sec         ; indicate failure
 @ok:
     rts
+
+; ========================================
+io_get_skip_space:
+    jsr io_get_byte
+    bcs @end
+    cmp #' '
+    beq io_get_skip_space
+
+    jsr io_get_putback 
+@end:
+    rts
+

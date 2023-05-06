@@ -3,7 +3,6 @@
 .include "acia.inc"
 
 .import cmdline_get_byte
-.import cmdline_put_back
 .feature string_escapes
 
 STACK_ADDR = $0100
@@ -24,15 +23,15 @@ cmd_mdump:
     .addr cmdline_get_byte
 
     ; Skip spaces at beginning of cmdline
-@skip_space:
+    jsr io_get_skip_space
+    bcs error
+
+    ; check if there are no parameters
     jsr io_get_byte
     bcs error
     cmp #0
     beq @no_arguments
-    cmp #' '
-    beq @skip_space
-
-    jsr cmdline_put_back
+    jsr io_get_putback
 
     ; Parse starting address
     jsr io_get_hex ; get addr MSB
