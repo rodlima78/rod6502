@@ -314,6 +314,7 @@ read_imports:
     bcc @skip_msb4
     inc cur_dst_import+1
 @skip_msb4:
+    clc
     rts
 
 @item_not_found:
@@ -399,6 +400,7 @@ read_exported_globals_list:
     beq @dont_relocate      ; yes, do not relocate 
     jmp segid_generic       ; no, Relocate the address (tail call optimization)
 @dont_relocate:
+    clc
     rts
 
 @item_not_found:
@@ -558,6 +560,7 @@ segid_generic:
 
 segid_absolute:
     ; don't relocate anything
+    clc                ; no error by default
     bit #TYPE_HIGH
     beq @end
     lda #%1000000      ; page-wise reloc bit

@@ -184,6 +184,7 @@ item_found:
     lda (strlist_ptr),y
     sta pcmd+1
     iny
+    clc
     rts
 
 item_not_found:
@@ -193,5 +194,6 @@ item_not_found:
 
     jsr io_put_const_string
     .asciiz "invalid command\r\n"
+    sec
     rts
 

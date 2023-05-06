@@ -65,6 +65,7 @@ item_found:
     jsr @call
     pla
     pla
+    clc
     rts
 @call:
     jmp (S+1,x)
@@ -72,6 +73,7 @@ item_found:
 item_not_found:
     jsr io_put_const_string
     .asciiz "invalid syntax\r\n"
+    sec
     rts
 
 ; =============================================================
