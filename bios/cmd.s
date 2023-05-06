@@ -17,8 +17,10 @@ PROMPT = '>'
 
 .segment "ZPTMP": zeropage
 idx_cmd_buffer: .res 1
-CMD_BUFFER: .res 16
 pcmd: .res 2
+
+.data
+CMD_BUFFER: .res 16
 
 .code
 
@@ -118,9 +120,24 @@ parse_cmd:
     bra @get_byte
 
 @got_cmd:
+    cpx #0              ; user only pressed ENTER (no command)?
+    bne @process_cmd    ; no, process the command
+    
+    ; yes, use the previous command.
+    ; write it out as if the user had typed it
+@print_cmd:
+    lda CMD_BUFFER,x
+    cmp #0
+    beq @process_cmd
+    jsr io_put_byte    
+    inx
+    bra @print_cmd
+
+@process_cmd:
+    stz CMD_BUFFER,x ; NUL marks end of buffer
+
     jsr io_put_const_string
     .asciiz "\r\n"
-    stz CMD_BUFFER,x ; NUL marks end of buffer
 
     ; Now let's compare the cmd string against the commands we define
 
