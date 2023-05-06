@@ -6,6 +6,7 @@
 .global acia_start
 .global acia_stop
 .global acia_get_byte
+.global acia_get_byte_timeout
 .global acia_put_byte
 .global acia_purge
 .global acia_enable_echo

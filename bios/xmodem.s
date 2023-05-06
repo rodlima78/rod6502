@@ -43,7 +43,7 @@ xmodem_init:
     .addr acia_put_byte
 
     jsr io_push_get_byte
-    .addr acia_get_byte
+    .addr acia_get_byte_timeout
 
     ; signal sender to start transfer
     lda #NAK

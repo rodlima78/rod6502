@@ -152,7 +152,7 @@ acia_purge:
     pha 
 @retry:
     lda #1      ; 1s timeout
-    jsr acia_get_byte
+    jsr acia_get_byte_timeout
     bcc @retry  ; got char (no error)? get next char
     bit #%1000  ; timeout?
     beq @retry  ; no (some other error)? try again
@@ -171,7 +171,7 @@ timeout_state: .res 1
 ; input: A -> timeout (seconds)
 ; return: A -> character read
 ; C==1 in case of errors
-acia_get_byte:
+acia_get_byte_timeout:
     ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
     phx
 
@@ -236,6 +236,11 @@ acia_get_byte:
 
     lda ACIA_DATA ; read data even in case of errors, to reset recv error bits
 
+    rts
+
+acia_get_byte:
+    lda #0
+    jsr acia_get_byte_timeout
     rts
 
 ; input: A -> character to be written out
