@@ -209,41 +209,12 @@ read_textseg:
     ldx #dest_tbase
     ldy #tlen
     jsr parse_segdata
-    beq read_dataseg
-    jsr load_errormsg
-    .asciiz "error receiving text data"
-
-load_errormsg:
-    jsr xmodem_deinit
-
-    jsr io_put_const_string
-    .asciiz "FAILED\r\n"
-
-    tsx
-    inx
-    jsr io_put_const_string_stack
-
-    ; restore stack pointer
-    ldx save_stack
-    txs
-    jmp cmd_loop
-
-load_error:
-    jsr xmodem_deinit
-
-    ; restore stack pointer
-    ldx save_stack
-    txs
-    jmp cmd_loop
 
     ; 3. read data segment --------------------------------------
 read_dataseg:
     ldx #dest_dbase
     ldy #dlen
     jsr parse_segdata
-    beq read_imports
-    jsr load_errormsg
-    .asciiz "error receiving data data"
 
     ; 4. parse import list --------------------------------------
 read_imports:
@@ -435,6 +406,32 @@ o65_finished:
     sta app_loaded
 
     jmp cmd_loop
+
+; ===============================================
+load_errormsg:
+    jsr xmodem_deinit
+
+    jsr io_put_const_string
+    .asciiz "FAILED\r\n"
+
+    tsx
+    inx
+    jsr io_put_const_string_stack
+
+    ; restore stack pointer
+    ldx save_stack
+    txs
+    jmp cmd_loop
+
+; ===============================================
+load_error:
+    jsr xmodem_deinit
+
+    ; restore stack pointer
+    ldx save_stack
+    txs
+    jmp cmd_loop
+
 
 ; ===============================================
 ; x: zp ptr to dest seg
