@@ -63,6 +63,7 @@ cmd_loop:
     .addr sym
 .endmacro
 cmd_jumptable:
+    def_cmd_handler info, cmd_info
     def_cmd_handler load, cmd_load
     def_cmd_handler mdump, cmd_mdump
     def_cmd_handler run, cmd_run

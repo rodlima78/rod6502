@@ -22,6 +22,7 @@ add_executable(bios_rom
     cmd_load.s
     cmd_run.s
     cmd_mdump.s
+    cmd_info.s
     io.s
     strlist.s
     post/post.s

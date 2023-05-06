@@ -61,6 +61,7 @@ sys_abort:
 
 import_table:
     ; must be sorted in ascii order
+    defsymbol __HEAP_RUN__
     defsymbol acia_get_byte
     defsymbol acia_get_byte_timeout
     defsymbol acia_put_byte
