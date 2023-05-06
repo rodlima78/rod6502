@@ -17,8 +17,12 @@ len: .res 2
 ; ================================================================
 ; X: zp pointer to word where address will be written to
 ; Y: zp pointer to word w/ allocation size
-; ret A: status 0->ok, 1->nomem
+; ret C==1: error (nomem)
 sys_malloc:
+    pha
+    phy
+    phx
+
     ; add 2 (or 3) to allocation size to compensate the fact that the segment
     ; size include its header size (2). Before returning we'll undo this.
     ; If alignment!=2, add 3 instead to keep size multiple of 2.
@@ -63,7 +67,20 @@ sys_malloc:
     ; we know A == LSB>>1 of next address
     bne @test_size  ; LSB not zero? go on test seg size
     lda (ptr),y     ; LSB is zero, load up MSB now (we know y==1)
-    beq @error      ; it's zero? error, end of heap
+    bne @test_size  ; not zero? go see it it fits
+                    ; error, end of heap
+    ; restore stack
+    ply ; (not needed) restore ptr to output addr
+    plp ; restore whether len align==1 (C==1) or align==2
+    jsr @rollback_len_update
+
+    jsr io_push_put_byte
+    .addr lcd_put_byte
+    jsr io_put_const_string
+    .asciiz "NOMEM"
+    jsr io_pop_put_byte
+    sec     ; indicate error
+    bra @end
 @test_size:
     ; calculate size of current segment
     lda (ptr)       ; next seg LSB
@@ -133,22 +150,12 @@ sys_malloc:
 
     plp             ; restore alignment
     jsr @rollback_len_update
+    clc
 
-    lda #0  ; OK!
-    rts
-
-@error:
-    ; restore stack
-    ply ; (not needed) restore ptr to output addr
-    plp ; restore whether len align==1 (C==1) or align==2
-    jsr @rollback_len_update
-
-    jsr io_push_put_byte
-    .addr lcd_put_byte
-    jsr io_put_const_string
-    .asciiz "NOMEM"
-    jsr io_pop_put_byte
-    lda #1
+@end:
+    plx
+    ply
+    pla
     rts
 
 ; pre-condition: C==1 ? align==1 : align==2
@@ -178,16 +185,17 @@ sys_free:
     lda 0,x
     sec
     sbc #2
+    sta 0,x
     bcs @skip_msb
     lda 1,x
     dea
     sta 1,x
 @skip_msb:
-
     ; mark it as free
     lda (0,x)
     ora #1
     sta (0,x)
+    clc
     rts
 
 ; ================================================================

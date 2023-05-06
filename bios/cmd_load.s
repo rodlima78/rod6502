@@ -172,21 +172,21 @@ cmd_load:
     ldx #dest_tbase
     ldy #tlen
     jsr sys_malloc
-    beq :+
+    bcc :+
     jsr load_errormsg
     .asciiz "error allocating memory for text segment"
 :   
     ldx #dest_dbase
     ldy #dlen
     jsr sys_malloc
-    beq :+
+    bcc :+
     jsr load_errormsg
     .asciiz "error allocating memory for data segment"
 :
     ldx #dest_bbase
     ldy #blen
     jsr sys_malloc
-    beq :+
+    bcc :+
     jsr load_errormsg
     .asciiz "error allocating memory for bss segment"
 :
@@ -232,7 +232,7 @@ read_imports:
     rol len+1
     ldy #len
     jsr sys_malloc
-    beq :+
+    bcc :+
     jsr load_errormsg
     .asciiz "error allocating memory for import table"
 :
