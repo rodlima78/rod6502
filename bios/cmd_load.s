@@ -91,6 +91,10 @@ cmd_load:
     tsx
     stx save_stack
 
+    ; dest_imports table not allocated (yet)
+    stz dest_imports
+    stz dest_imports+1
+
     ; No entry point defined (so far)
     stz ptr_app_entrypoint
     stz ptr_app_entrypoint+1
@@ -405,6 +409,10 @@ o65_finished:
     lda #$FF
     sta app_loaded
 
+    ; deallocate dest_imports table
+    ldx #dest_imports
+    jsr sys_free
+
     jmp cmd_loop
 
 ; ===============================================
@@ -418,6 +426,11 @@ load_errormsg:
     inx
     jsr io_put_const_string_stack
 
+    ; deallocate dest_imports table
+    ldx #dest_imports
+    jsr sys_free
+
+@continue:
     ; restore stack pointer
     ldx save_stack
     txs
@@ -426,6 +439,10 @@ load_errormsg:
 ; ===============================================
 load_error:
     jsr xmodem_deinit
+
+    ; deallocate dest_imports table
+    ldx #dest_imports
+    jsr sys_free
 
     ; restore stack pointer
     ldx save_stack

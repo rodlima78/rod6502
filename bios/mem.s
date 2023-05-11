@@ -214,6 +214,12 @@ sys_malloc:
 ; x: zp pointer to word with address to be freed
 ; thrashed: a, input pointer
 sys_free:
+    ; do nothing is pointer is null
+    lda 0,x
+    bne @continue
+    lda 1,x
+    beq @end
+@continue:
     ; make input point to header of segment (ptr-2)
     lda 0,x
     sec
@@ -228,6 +234,7 @@ sys_free:
     lda (0,x)
     ora #1
     sta (0,x)
+@end:
     clc
     rts
 
