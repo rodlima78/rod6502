@@ -25,12 +25,13 @@ len: .res 2
 ; bool align2 = size%2==0;
 ; size += align2 ? 2 : 3;
 ; byte *next;
+; int segsize;
 ; for(ptr = heap_head; ptr != NULL; ptr = *ptr)
 ; {
 ;      if(*ptr & 1) // free ?
 ;      {
 ;           ptr &= ~1;
-;           int segsize = next-ptr;
+;           segsize = next-ptr;
 ;           if(segsize >= size)
 ;           {
 ;               break;
@@ -40,9 +41,17 @@ len: .res 2
 ; assert(ptr != NULL);
 ; output = ptr+2;
 ; next = *ptr;
-; *ptr = ptr+size
-; ptr += size;
-; *ptr = next;
+; if(segsize != size)
+; {
+;     // create empty segment following current one till next segment
+;     *ptr = ptr+size
+;     ptr += size;
+;     *ptr = next;
+; }
+; else
+; {
+;     *ptr &= ~1;
+; }
 ; size -= align2 ? 2 : 3;
 sys_malloc:
     ; Make sure we're aligned to 2 bytes -------------------------
@@ -122,9 +131,19 @@ sys_malloc:
     sbc ptr         ; we know C==1, no need for sec
     cmp 0,y         ; seg len LSB < needed len LSB?
 @prepare_loop_next:
+    php
     ldy #1          ; restore loop invariant
+    plp
     bcc @loop_next  ; yes, seg too small, try next one
 @found_fits:        ; found segment large enough!
+    ; if(segsize != size)
+    bne @create_new_seg
+    ; *ptr &= ~1
+    lda (ptr)
+    and #.lobyte(~1) ; mark segment as being occuppied
+    sta (ptr)
+
+@create_new_seg:
     pla             ; restore stack
 
     ; output = ptr+2 (skip header)
@@ -137,11 +156,13 @@ sys_malloc:
     adc ptr+1
     sta 1,x
 
-    ; make ptr point one past end of current segment (beginning of the new empty seg)
     plx     ; pop pointer to size
 
-    ; Now we update the segment to indicate it's being used and create new empty segment -------
-    ; save values that we'll write to the header of the new empty segment
+    lda (ptr)
+    lsr         ; current segment is ocuppied (because segsize==size),
+    bcc @end    ; don't create new segment, go straight to end
+
+    ; Save values that we'll write to the header of the new empty segment
     ; next = *ptr
     ldy #1
     lda (ptr),y
@@ -158,6 +179,7 @@ sys_malloc:
     pha         ; save LSB
     lda ptr+1
     adc 1,x
+    ldy #1
     sta (ptr),y ; we know y==1
     tay         ; save MSB
     pla         
@@ -174,6 +196,7 @@ sys_malloc:
     ldy #1
     sta (ptr),y
 
+@end:
     ; size -= align2 ? 2 : 3
     plp         ; restore alignment
     lda 0,x
