@@ -5,6 +5,7 @@
 
 .importzp app_loaded
 .import ptr_app_entrypoint
+.import unload_app
 
 .code
 cmd_run:

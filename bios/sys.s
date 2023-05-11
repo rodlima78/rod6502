@@ -8,7 +8,7 @@
 .import cmd_loop
 .export import_table
 .import save_stack
-.importzp app_loaded
+.import unload_app
 
 STACK_SEG = $0100
 
@@ -22,7 +22,7 @@ sys_exit:
     txs
 
     ; app not loaded anymore
-    stz app_loaded
+    jsr unload_app
 
     jmp cmd_loop
 

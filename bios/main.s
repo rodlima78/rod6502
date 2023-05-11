@@ -10,11 +10,8 @@
 .import init_irq
 .import init_mem
 .import irq_handler
+.import init_app_loader
 
-.export app_loaded
-
-.segment "ZPTMP": zeropage
-app_loaded: .res 1
 
 .code
 bios_main:
@@ -35,7 +32,7 @@ post_ok:
     jsr init_mem   ; run first to initialize heap and data seg
     jsr init_irq
     jsr lcd_init
-    stz app_loaded ; no app loaded yet
+    jsr init_app_loader
 
     jmp cmd_loop
 

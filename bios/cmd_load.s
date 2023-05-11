@@ -6,11 +6,13 @@
 .include "strlist.inc"
 .include "io.inc"
 
-.importzp app_loaded
+.exportzp app_loaded
 .import import_table
 .export save_stack
 .export ptr_app_entrypoint
 .import fill_mem
+.export unload_app
+.export init_app_loader
 
 .feature string_escapes
 
@@ -21,6 +23,8 @@ NAK = $15
 CAN = $18
 
 .segment "ZPTMP": zeropage
+app_loaded: .res 1
+
 next_block: .res 1
 next_data_in_block: .res 1 ; index of next data to be read in block
 
@@ -44,12 +48,6 @@ slen:  .res 2 ; stack length
 ptr: .res 2
 len: .res 2
 
-; must have same order as segs in o65 header
-dest_tbase: .res 2
-dest_dbase: .res 2
-dest_bbase: .res 2
-dest_zbase: .res 2
-
 dest_imports: .res 2
 cur_src_import: .res 2
 cur_dst_import: .res 2
@@ -67,6 +65,13 @@ TYPE_HIGH     = $40 ; MSB of an address
 TYPE_LOW      = $20 ; LSB of an address
 TYPE_SEGADDR  = $C0 ; not used, 65816
 TYPE_SEG      = $A0 ; not used, 65816
+
+.zeropage
+; must have same order as segs in o65 header
+dest_tbase: .res 2
+dest_dbase: .res 2
+dest_bbase: .res 2
+dest_zbase: .res 2
 
 .data
 save_stack: .res 1
@@ -91,9 +96,7 @@ cmd_load:
     tsx
     stx save_stack
 
-    ; dest_imports table not allocated (yet)
-    stz dest_imports
-    stz dest_imports+1
+    jsr unload_app
 
     ; No entry point defined (so far)
     stz ptr_app_entrypoint
@@ -675,5 +678,35 @@ relocate:
     clc
     adc (cur_rel)        ; add data LSB
     sta (cur_rel)        ; store relocated LSB (do not need MSB)
+    rts
+
+; ===============================================
+unload_app:
+    ldx #dest_tbase
+    jsr sys_free
+
+    ldx #dest_dbase
+    jsr sys_free
+
+    ldx #dest_bbase
+    jsr sys_free
+
+    ; mark as not loaded
+    stz app_loaded
+
+    rts
+
+init_app_loader:
+    ; dest_imports table not allocated (yet)
+    stz dest_imports
+    stz dest_imports+1
+    ldx #8
+@loop_erase_dest_seg_ptrs:
+    stz dest_tbase-1,x
+    dex
+    bne @loop_erase_dest_seg_ptrs
+
+    stz app_loaded
+
     rts
 
