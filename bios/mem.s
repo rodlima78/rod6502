@@ -19,6 +19,8 @@ len: .res 2
 ; ================================================================
 ; X: zp pointer to word where address will be written to
 ; Y: zp pointer to word w/ allocation size
+; thrashed: a,x,y
+;
 ; Pseudo-code:
 ; bool align2 = size%2==0;
 ; size += align2 ? 2 : 3;
@@ -43,8 +45,6 @@ len: .res 2
 ; *ptr = next;
 ; size -= align2 ? 2 : 3;
 sys_malloc:
-    pha
-
     ; Make sure we're aligned to 2 bytes -------------------------
     ; size += size%2==0 ? 2 : 3 
     lda 0,y
@@ -64,8 +64,8 @@ sys_malloc:
     sta 1,y
 @skip_msb:
 
-    phy
-    phx
+    phy      ; push pointer to size
+    phx      ; push pointer to output
     SIZE   = S+2
     tsx
 
@@ -131,11 +131,14 @@ sys_malloc:
     lda ptr
     clc
     adc #2
-    ply             ; restore ptr to output
-    sta 0,y
+    plx             ; restore ptr to output
+    sta 0,x
     lda #0
     adc ptr+1
-    sta 1,y
+    sta 1,x
+
+    ; make ptr point one past end of current segment (beginning of the new empty seg)
+    plx     ; pop pointer to size
 
     ; Now we update the segment to indicate it's being used and create new empty segment -------
     ; save values that we'll write to the header of the new empty segment
@@ -146,37 +149,32 @@ sys_malloc:
     lda (ptr) ; bit0==1 as it's freed
     pha
 
-    ; make ptr point one past end of current segment (beginning of the new empty seg)
-    ldy SIZE,x
-    ; X is now free, can't use local stack from now on
-
-    ; note: 0,y currently points to len+2, exactly what we need
+    ; note: 0,x currently points to len+2, exactly what we need
     ; and make cur seg point to next we'll create
     ; *ptr = ptr+size
     clc
     lda ptr       
-    adc 0,y
-    pha
+    adc 0,x
+    pha         ; save LSB
     lda ptr+1
-    adc 1,y
-    tax
-    ldy #1
-    sta (ptr),y
-    pla
+    adc 1,x
+    sta (ptr),y ; we know y==1
+    tay         ; save MSB
+    pla         
     sta (ptr)
     ; ptr += size
     sta ptr
-    stx ptr+1
+    sty ptr+1
 
     ; create header of new (empty) segment
     ; *ptr = next
     pla             ; restore LSB of the old next segment
     sta (ptr)       ; we know bit0==1
     pla
-    sta (ptr),y     ; we know y==1
+    ldy #1
+    sta (ptr),y
 
     ; size -= align2 ? 2 : 3
-    plx         ; restore ptr to size
     plp         ; restore alignment
     lda 0,x
     sbc #2      ; C==0? size-3 : size-2
@@ -187,14 +185,11 @@ sys_malloc:
     sta 1,x
 @skip_msb2:
     clc     ; success
-
-    pla
     rts
 
 ; ================================================================
 ; x: zp pointer to word with address to be freed
-; ret A: status 0->ok, 1->notfound
-; obs: input pointer content gets garbled
+; thrashed: a, input pointer
 sys_free:
     ; make input point to header of segment (ptr-2)
     lda 0,x
