@@ -235,6 +235,8 @@ sys_free:
     ora #1
     sta (0,x)
 @end:
+    stz 0,x
+    stz 1,x
     clc
     rts
 
