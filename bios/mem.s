@@ -9,11 +9,12 @@ S = $0100
 
 .segment "HEAP"
 .align 2
-heap_head: .res 0
+heap_free: .res 0
 
 .zeropage
-ptr: .res 2
-len: .res 2
+ptr:   .res 2
+pfree: .res 2
+len:   .res 2
 
 .code
 ; ================================================================
@@ -21,38 +22,47 @@ len: .res 2
 ; Y: zp pointer to word w/ allocation size
 ; thrashed: a,x,y
 ;
-; Pseudo-code:
+; Pseudo-code --------------------------------------
 ; bool align2 = size%2==0;
 ; size += align2 ? 2 : 3;
-; byte *next;
 ; int segsize;
-; for(ptr = heap_head; ptr != NULL; ptr = *ptr)
+; void *ptr = heap_free;
+; void *pfree = NULL;
+; do
 ; {
 ;      if(*ptr & 1) // free ?
 ;      {
-;           ptr &= ~1;
-;           segsize = next-ptr;
+;           if(pfree == NULL)
+;           {
+;               pfree = ptr;
+;           }
+;           ptr = *ptr & ~1;
+;           assert(ptr != NULL);
+;           segsize = ptr-pfree;
 ;           if(segsize >= size)
 ;           {
 ;               break;
 ;           }
 ;      }
+;      else
+;      { 
+;           ptr = *ptr;
+;           pfree = NULL;
+;      }
 ; }
-; assert(ptr != NULL);
-; output = ptr+2;
-; next = *ptr;
+; while(ptr != NULL);
+; output = pfree+2;
 ; if(segsize != size)
 ; {
-;     // create empty segment following current one till next segment
-;     *ptr = ptr+size
-;     ptr += size;
-;     *ptr = next;
+;     // create empty segment following current one till ptr segment
+;     *pfree = pfree+size // returned segment will be marked as occupied
+;     pfree += size;      // pfree points to added empty segment
+;     ptr |= 1;           // mark new segment as being free during assignment below
 ; }
-; else
-; {
-;     *ptr &= ~1;
-; }
+; *pfree = ptr;
+;
 ; size -= align2 ? 2 : 3;
+; -------------------------------------------
 sys_malloc:
     ; Make sure we're aligned to 2 bytes -------------------------
     ; size += size%2==0 ? 2 : 3 
@@ -65,26 +75,30 @@ sys_malloc:
     inc
 @is_aligned:
     clc
-    adc 0,y  ; LSB+2+~Carry (align==1, add 3, or else add 2)
+    adc 0,y  ; LSB+(align==10 2: 3)
     sta 0,y
     bcc @skip_msb
     lda #0
     adc 1,y  ; increment size MSB (as C==1)
     sta 1,y
 @skip_msb:
-
     phy      ; push pointer to size
     phx      ; push pointer to output
+    OUTPUT = S+1
     SIZE   = S+2
-    tsx
+    tsx      ; X = pointer to local stack
+
+    ; void *pfree = NULL;
+    stz pfree
+    stz pfree+1
 
     ; Loop through linked list of segments until we find one that
     ; has size greater of equal than what's needed
 
-    ; for(ptr = heap_head;
-    lda #>heap_head ; ptr points at first segment
+    ; ptr = heap_free;
+    lda #>heap_free ; ptr points at first free segment
     sta ptr+1
-    lda #<heap_head
+    lda #<heap_free
     sta ptr
 
     ldy #1          ; loop invariant
@@ -95,17 +109,19 @@ sys_malloc:
     bcs @found_free ; C==1 (bit0==1)? yes, found free segment
     ; else
     asl
-    pha             ; push LSB
-@loop_next:         ; expects LSB w/o flag on stack (expects y==1)
+    pha
     ; ptr = *ptr
-    lda (ptr),y     ; read MSB
+    lda (ptr),y     ; read MSB, we know y==1
     sta ptr+1       ; now we can change ptr, save MSB
-    pla             ; pop LSB
+    pla
     sta ptr         ; save LSB (we know bit0==0)
+    ; pfree = NULL;
+    stz pfree
+    stz pfree+1
     bra @loop
 @found_free:
     ; test if end of heap
-    ; if ptr != NULL
+    ; assert(ptr != NULL)
     ; we know A == LSB>>1 of next address
     bne @test_size  ; LSB not zero? go on test seg size
     lda (ptr),y     ; LSB is zero, load up MSB now (we know y==1)
@@ -115,88 +131,89 @@ sys_malloc:
     .asciiz "ENOMEM"
 
 @test_size:
-    ; calculate size of current segment
-    lda (ptr)       ; next seg LSB
-    and #.lobyte(~1); make sure LSB don't have the utilization flag set
-    pha             ;
-    sbc ptr         ; we know C==1, no need for sec
+    ; if(pfree == NULL)
+    lda pfree
+    bne @after_assign_pfree
+    lda pfree+1
+    bne @after_assign_pfree
+    ; pfree = ptr;
+    lda ptr
+    sta pfree
+    lda ptr+1
+    sta pfree+1
+@after_assign_pfree:
+    ; ptr = *ptr & ~1
+    lda (ptr)
+    and #<~1
+    pha
     lda (ptr),y     ; we know y==1
-    sbc ptr+1       ; we only need the carry for sbc on MSB
+    sta ptr+1
+    pla
+    sta ptr
+    ; segsize = ptr-pfree
+    sbc pfree       ; we know C==1, no need for sec
+    lda ptr+1
+    sbc pfree+1
     ldy SIZE,x
+    ; if(segsize >= size)
     cmp 1,y         ; seg len MSB < needed len MSB?
     bcc @prepare_loop_next  ; yes, segment too small, try next one
     bne @found_fits ; seg len MSB > needed len MSB? yes, it fits
-    pla             ; restore next seg LSB
-    pha             ; still needs to be on stack for @loop_next
-    sbc ptr         ; we know C==1, no need for sec
-    cmp 0,y         ; seg len LSB < needed len LSB?
-@prepare_loop_next:
-    php
-    ldy #1          ; restore loop invariant
-    plp
-    bcc @loop_next  ; yes, seg too small, try next one
-@found_fits:        ; found segment large enough!
-    ; if(segsize != size)
-    bne @create_new_seg
-    ; *ptr &= ~1
-    lda (ptr)
-    and #.lobyte(~1) ; mark segment as being occuppied
-    sta (ptr)
-
-@create_new_seg:
-    pla             ; restore stack
-
-    ; output = ptr+2 (skip header)
     lda ptr
+    sbc pfree       ; we know C==1, no need for sec
+    cmp 0,y         ; seg len LSB >= needed len LSB?
+    bcs @found_fits ; it fits, exit loop
+@prepare_loop_next:
+    ldy #1          ; restore loop invariant
+    bra @loop       ; yes, seg too small, try next one
+@found_fits:        ; found segment large enough!
+    php             ; push segsize==size
+    ; output = pfree+2 (skip header)
+    lda pfree
     clc
     adc #2
-    plx             ; restore ptr to output
-    sta 0,x
-    lda #0
-    adc ptr+1
-    sta 1,x
+    ldy OUTPUT,x
+    sta 0,y
+    lda pfree+1
+    adc #0
+    sta 1,y
 
-    plx     ; pop pointer to size
+    plp             ; pop segsize==size
+    beq @end        ; segsize==size? go to end
 
-    lda (ptr)
-    lsr         ; current segment is ocuppied (because segsize==size),
-    bcc @end    ; don't create new segment, go straight to end
-
-    ; Save values that we'll write to the header of the new empty segment
-    ; next = *ptr
-    ldy #1
-    lda (ptr),y
-    pha
-    lda (ptr) ; bit0==1 as it's freed
-    pha
-
-    ; note: 0,x currently points to len+2, exactly what we need
-    ; and make cur seg point to next we'll create
-    ; *ptr = ptr+size
+    ; *pfree = pfree+size
     clc
-    lda ptr       
-    adc 0,x
-    pha         ; save LSB
-    lda ptr+1
-    adc 1,x
+    ldy SIZE,x
+    lda 0,y
+    adc pfree
+    pha
+    lda 1,y
+    adc pfree+1
     ldy #1
-    sta (ptr),y ; we know y==1
-    tay         ; save MSB
-    pla         
-    sta (ptr)
-    ; ptr += size
-    sta ptr
-    sty ptr+1
-
-    ; create header of new (empty) segment
-    ; *ptr = next
-    pla             ; restore LSB of the old next segment
-    sta (ptr)       ; we know bit0==1
+    sta (pfree),y
+    tay
     pla
-    ldy #1
-    sta (ptr),y
+    sta (pfree)
+    ; pfree += size
+    sta pfree
+    tya
+    sta pfree+1
+    ; ptr |= 1
+    lda ptr
+    ora #1
+    sta ptr
 
 @end:
+    ; *pfree = ptr
+    lda ptr
+    sta (pfree)
+    lda ptr+1
+    ldy #1
+    sta (pfree),y
+
+    pla     ; pop pointer to output, not needed anymore
+    plx     ; pop pointer to size
+
     ; size -= align2 ? 2 : 3
     plp         ; restore alignment
     lda 0,x
@@ -336,13 +353,13 @@ init_mem:
     ; fill in header of first segment
     ; write 16bit pointer to next segment.
     lda #<LAST_SEG_ADDR
-    ora #1      ; mark it as not used
-    sta heap_head
+    ora #1      ; mark it as free
+    sta heap_free
     lda #>LAST_SEG_ADDR
-    sta heap_head+1
+    sta heap_free+1
 
     ; define end of heap, pointer to NULL
-    lda #1 ; mark it as not used, it helps in the loop in sys_malloc
+    lda #1 ; mark it as free, it helps in the loop in sys_malloc
     sta LAST_SEG_ADDR
     stz LAST_SEG_ADDR+1
 
