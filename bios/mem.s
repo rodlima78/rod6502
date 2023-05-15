@@ -43,11 +43,16 @@ len:   .res 2
 ;           {
 ;               break;
 ;           }
+;           // is next seg occupied?
+;           if((*ptr & 1) == 0)
+;           {
+;               // have to look for another free seg
+;               pfree = NULL;
+;           }
 ;      }
 ;      else
 ;      { 
 ;           ptr = *ptr;
-;           pfree = NULL;
 ;      }
 ; }
 ; while(ptr != NULL);
@@ -88,9 +93,9 @@ sys_malloc:
     SIZE   = S+2
     tsx      ; X = pointer to local stack
 
-    ; void *pfree = NULL;
-    stz pfree
-    stz pfree+1
+    ; void *pfree = NULL; (we indicate it with 1 (odd) on LFS, as all valid addresses are even.
+    lda #1
+    sta pfree
 
     ; Loop through linked list of segments until we find one that
     ; has size greater of equal than what's needed
@@ -115,9 +120,6 @@ sys_malloc:
     sta ptr+1       ; now we can change ptr, save MSB
     pla
     sta ptr         ; save LSB (we know bit0==0)
-    ; pfree = NULL;
-    stz pfree
-    stz pfree+1
     bra @loop
 @found_free:
     ; test if end of heap
@@ -133,9 +135,8 @@ sys_malloc:
 @test_size:
     ; if(pfree == NULL)
     lda pfree
-    bne @after_assign_pfree
-    lda pfree+1
-    bne @after_assign_pfree
+    lsr
+    bcc @after_assign_pfree
     ; pfree = ptr;
     lda ptr
     sta pfree
@@ -151,7 +152,8 @@ sys_malloc:
     pla
     sta ptr
     ; segsize = ptr-pfree
-    sbc pfree       ; we know C==1, no need for sec
+    sec
+    sbc pfree
     lda ptr+1
     sbc pfree+1
     ldy SIZE,x
@@ -165,6 +167,12 @@ sys_malloc:
     bcs @found_fits ; it fits, exit loop
 @prepare_loop_next:
     ldy #1          ; restore loop invariant
+    ; if((*ptr & 1) == 0)
+    lda (ptr)
+    lsr
+    bcs @loop
+    ; pfree = NULL
+    sty pfree       ; we know y==1
     bra @loop       ; yes, seg too small, try next one
 @found_fits:        ; found segment large enough!
     php             ; push segsize==size
