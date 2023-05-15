@@ -108,10 +108,11 @@ sys_malloc:
 
     ldy #1          ; loop invariant
 @loop:
-    ; if(*ptr & 1)
     lda (ptr)       ; load LSB of pointer to next segment (+ utilization flag on bit0) 
     lsr             
+    ; if(*ptr & 1)
     bcs @found_free ; C==1 (bit0==1)? yes, found free segment
+@loop_not_found: ; assumes A = (ptr)>>1
     ; else
     asl
     pha
@@ -170,10 +171,10 @@ sys_malloc:
     ; if((*ptr & 1) == 0)
     lda (ptr)
     lsr
-    bcs @loop
+    bcs @found_free ; can go to @found_free directly instead of @loop_ptr_loaded
     ; pfree = NULL
     sty pfree       ; we know y==1
-    bra @loop       ; yes, seg too small, try next one
+    bra @loop_not_found ; yes, seg too small, try next one
 @found_fits:        ; found segment large enough!
     php             ; push segsize==size
     ; output = pfree+2 (skip header)
