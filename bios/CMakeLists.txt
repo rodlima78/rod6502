@@ -1,5 +1,7 @@
 project(bios ASM)
 
+add_subdirectory(tests)
+
 # BIOS interface to apps -----------
 add_library(bios INTERFACE)
 target_include_directories(bios INTERFACE include)
