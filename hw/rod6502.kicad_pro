@@ -386,7 +386,7 @@
       "pin_to_pin": "error",
       "power_pin_not_driven": "error",
       "similar_labels": "warning",
-      "simulation_model_issue": "error",
+      "simulation_model_issue": "ignore",
       "unannotated": "error",
       "unit_value_mismatch": "error",
       "unresolved_variable": "error",
@@ -598,8 +598,9 @@
       "/Ctrl Display/~{IRQ5}": "irq",
       "/Ctrl Display/~{IRQ6}": "irq",
       "/Ctrl Display/~{IRQ7}": "irq",
+      "/Ctrl Display/~{IRQ8}": "irq",
+      "/Ctrl Display/~{IRQ9}": "irq",
       "/Ctrl Display/~{IRQ[0..9]}": "irq",
-      "/DEV0_~{CS}": "ctrl",
       "/DEV1_~{CS}": "ctrl",
       "/DEV2_~{CS}": "ctrl",
       "/DEV3_~{CS}": "ctrl",
@@ -609,6 +610,8 @@
       "/RAM0_~{CS}": "ctrl",
       "/RAM1_~{CS}": "ctrl",
       "/ROM_~{CS}": "ctrl",
+      "/VERA/LevelConv4/LV": "vcc",
+      "/VERA_~{CS}": "ctrl",
       "/VIA_~{CS}": "ctrl",
       "/{ctrl}": "ctrl"
     },
@@ -628,6 +631,10 @@
       {
         "netclass": "clk",
         "pattern": "/CLK"
+      },
+      {
+        "netclass": "vcc",
+        "pattern": "+3.3V"
       }
     ]
   },
@@ -730,6 +737,14 @@
     [
       "d4b06dc5-82b5-45a3-82e5-e295643c22f1",
       "Clock"
+    ],
+    [
+      "483a966f-eee8-4f33-a7bb-d1365211428b",
+      "VERA"
+    ],
+    [
+      "0399b11a-1c30-4b2f-a517-0d2075a1b58d",
+      "LevelConv4"
     ],
     [
       "387d63cb-29c8-435a-8360-c060a1716418",
