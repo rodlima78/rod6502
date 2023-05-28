@@ -590,9 +590,9 @@
     )
   )
 
-  (bus_alias "ctrl" (members "RAM0_~{CS}" "ROM_~{CS}" "VIA_~{CS}" "CPU_R~{W}" "ACIA_~{CS}" "IRQ_~{CS}" "LCD_E" "RAM1_~{CS}" "VERA_~{CS}" "DEV1_~{CS}" "DEV2_~{CS}" "DEV3_~{CS}"))
   (bus_alias "cpu" (members "CPU_~{VP}" "CPU_~{ML}" "CPU_SYNC" "CPU_~{NMI}"))
   (bus_alias "irq" (members "~{IRQ[0..7]}" "CPU_~{IRQ}"))
+  (bus_alias "ctrl" (members "RAM0_~{CS}" "ROM_~{CS}" "VIA_~{CS}" "CPU_R~{W}" "ACIA_~{CS}" "IRQ_~{CS}" "LCD_E" "RAM1_~{CS}" "VERA_~{CS}" "DEV1_~{CS}" "DEV2_~{CS}" "DEV3_~{CS}"))
 
   (junction (at 93.98 72.39) (diameter 0) (color 0 0 0 0)
     (uuid 0842b1a7-08be-49b9-aad2-393e76e48541)
@@ -2335,7 +2335,7 @@
   (symbol (lib_id "power:VCC") (at 20.32 24.13 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 1dd0c397-f53b-4846-a24c-da85da2e22ed)
-    (property "Reference" "#PWR02" (at 20.32 27.94 0)
+    (property "Reference" "#PWR01" (at 20.32 27.94 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (at 20.32 20.32 0)
@@ -2351,7 +2351,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1"
-          (reference "#PWR02") (unit 1)
+          (reference "#PWR01") (unit 1)
         )
       )
     )
@@ -2360,7 +2360,7 @@
   (symbol (lib_id "power:Earth") (at 20.32 34.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 27e34df1-2a69-41d8-a9c1-d0d3f2f3d414)
-    (property "Reference" "#PWR03" (at 20.32 40.64 0)
+    (property "Reference" "#PWR02" (at 20.32 40.64 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 20.32 38.1 0)
@@ -2376,7 +2376,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1"
-          (reference "#PWR03") (unit 1)
+          (reference "#PWR02") (unit 1)
         )
       )
     )
@@ -2449,7 +2449,7 @@
   (symbol (lib_id "power:VCC") (at 35.56 116.84 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 46b6566f-b354-4c3e-b7e9-68c619195f21)
-    (property "Reference" "#PWR06" (at 35.56 120.65 0)
+    (property "Reference" "#PWR04" (at 35.56 120.65 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (at 35.56 113.03 0)
@@ -2465,7 +2465,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1"
-          (reference "#PWR06") (unit 1)
+          (reference "#PWR04") (unit 1)
         )
       )
     )
@@ -2500,7 +2500,7 @@
   (symbol (lib_id "power:VCC") (at 64.77 88.9 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 57678cda-88f2-4593-a1f3-5fe21ffaf16d)
-    (property "Reference" "#PWR05" (at 64.77 92.71 0)
+    (property "Reference" "#PWR03" (at 64.77 92.71 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5V" (at 64.77 85.09 0)
@@ -2516,7 +2516,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1"
-          (reference "#PWR05") (unit 1)
+          (reference "#PWR03") (unit 1)
         )
       )
     )
@@ -2582,7 +2582,7 @@
   (symbol (lib_id "power:Earth") (at 64.77 167.64 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 65329451-2b1e-4bf3-bc87-383c9f39a145)
-    (property "Reference" "#PWR07" (at 64.77 173.99 0)
+    (property "Reference" "#PWR05" (at 64.77 173.99 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 64.77 171.45 0)
@@ -2598,7 +2598,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1"
-          (reference "#PWR07") (unit 1)
+          (reference "#PWR05") (unit 1)
         )
       )
     )

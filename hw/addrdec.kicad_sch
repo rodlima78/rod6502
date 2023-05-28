@@ -2031,7 +2031,7 @@
   (symbol (lib_id "74xx:74LS04") (at 161.29 43.18 0) (unit 6)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 11173f01-a234-41b1-954d-b58963a87d90)
-    (property "Reference" "U8" (at 160.655 43.18 0)
+    (property "Reference" "U7" (at 160.655 43.18 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74AS04N" (at 161.29 38.1 0)
@@ -2066,7 +2066,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 6)
+          (reference "U7") (unit 6)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/890f0003-2042-459e-ac4a-1dd81f8fbcc6"
           (reference "U8") (unit 6)
@@ -2119,7 +2119,7 @@
   (symbol (lib_id "74xx:74LS04") (at 161.29 29.21 0) (unit 3)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2fb72fb6-3a3d-4131-94ba-f2ae6f637c98)
-    (property "Reference" "U8" (at 160.655 29.21 0)
+    (property "Reference" "U7" (at 160.655 29.21 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74AS04N" (at 161.29 24.13 0)
@@ -2154,7 +2154,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 3)
+          (reference "U7") (unit 3)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/890f0003-2042-459e-ac4a-1dd81f8fbcc6"
           (reference "U8") (unit 3)
@@ -2289,7 +2289,7 @@
           (reference "U11") (unit 3)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U7") (unit 1)
+          (reference "U8") (unit 1)
         )
       )
     )
@@ -2298,7 +2298,7 @@
   (symbol (lib_id "power:Earth") (at 149.86 57.15 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 457248ea-152a-4cc8-8984-ba88bfde1213)
-    (property "Reference" "#PWR044" (at 149.86 63.5 0)
+    (property "Reference" "#PWR018" (at 149.86 63.5 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 149.86 60.96 0)
@@ -2314,7 +2314,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR044") (unit 1)
+          (reference "#PWR018") (unit 1)
         )
       )
     )
@@ -2364,7 +2364,7 @@
   (symbol (lib_id "power:Earth") (at 69.85 91.44 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 48fc6fbc-bfaa-4f37-86eb-d92a2bba8772)
-    (property "Reference" "#PWR024" (at 69.85 97.79 0)
+    (property "Reference" "#PWR020" (at 69.85 97.79 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 69.85 95.25 0)
@@ -2380,7 +2380,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR024") (unit 1)
+          (reference "#PWR020") (unit 1)
         )
       )
     )
@@ -2389,7 +2389,7 @@
   (symbol (lib_id "74xx:74LS04") (at 170.18 113.03 0) (unit 7)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 68a6a5fd-f74d-4c73-9826-eeb11faed1d9)
-    (property "Reference" "U8" (at 176.53 112.395 0)
+    (property "Reference" "U7" (at 176.53 112.395 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "74AS04N" (at 176.53 114.935 0)
@@ -2424,7 +2424,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 7)
+          (reference "U7") (unit 7)
         )
       )
     )
@@ -2433,7 +2433,7 @@
   (symbol (lib_id "power:VCC") (at 147.32 97.79 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 6c1a2c3c-a13a-47d2-aa07-0aa2a35bb210)
-    (property "Reference" "#PWR019" (at 147.32 101.6 0)
+    (property "Reference" "#PWR021" (at 147.32 101.6 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5v" (at 147.32 93.98 0)
@@ -2449,7 +2449,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR019") (unit 1)
+          (reference "#PWR021") (unit 1)
         )
       )
     )
@@ -2539,7 +2539,7 @@
           (reference "U11") (unit 5)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U7") (unit 5)
+          (reference "U8") (unit 5)
         )
       )
     )
@@ -2589,7 +2589,7 @@
   (symbol (lib_id "power:Earth") (at 101.6 74.93 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 8dc66667-eea1-40cf-ab08-3a7598b4ca85)
-    (property "Reference" "#PWR052" (at 101.6 81.28 0)
+    (property "Reference" "#PWR019" (at 101.6 81.28 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 101.6 78.74 0)
@@ -2605,7 +2605,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR052") (unit 1)
+          (reference "#PWR019") (unit 1)
         )
       )
     )
@@ -2614,7 +2614,7 @@
   (symbol (lib_id "74xx:74LS04") (at 55.88 24.13 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 973be4d9-e7da-427c-b328-9914314f1a3e)
-    (property "Reference" "U8" (at 54.61 24.13 0)
+    (property "Reference" "U7" (at 54.61 24.13 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74AS04N" (at 55.88 18.415 0)
@@ -2649,7 +2649,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 1)
+          (reference "U7") (unit 1)
         )
       )
     )
@@ -2658,7 +2658,7 @@
   (symbol (lib_id "power:Earth") (at 147.32 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 9758a8e6-0bcc-4052-8c87-6cb807371791)
-    (property "Reference" "#PWR020" (at 147.32 133.35 0)
+    (property "Reference" "#PWR023" (at 147.32 133.35 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "Earth" (at 147.32 130.81 0)
@@ -2674,7 +2674,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR020") (unit 1)
+          (reference "#PWR023") (unit 1)
         )
       )
     )
@@ -2683,7 +2683,7 @@
   (symbol (lib_id "power:VCC") (at 69.85 55.88 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid ba78919b-1325-430f-9b33-cde5997263eb)
-    (property "Reference" "#PWR021" (at 69.85 59.69 0)
+    (property "Reference" "#PWR017" (at 69.85 59.69 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+5v" (at 69.85 52.07 0)
@@ -2699,7 +2699,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "#PWR021") (unit 1)
+          (reference "#PWR017") (unit 1)
         )
       )
     )
@@ -2743,7 +2743,7 @@
           (reference "U11") (unit 2)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U7") (unit 2)
+          (reference "U8") (unit 2)
         )
       )
     )
@@ -2752,7 +2752,7 @@
   (symbol (lib_id "74xx:74LS04") (at 92.71 53.34 0) (unit 2)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ca9594f7-b969-41b9-8863-985b63884039)
-    (property "Reference" "U8" (at 91.44 53.34 0)
+    (property "Reference" "U7" (at 91.44 53.34 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74AS04N" (at 92.71 47.625 0)
@@ -2787,7 +2787,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 2)
+          (reference "U7") (unit 2)
         )
       )
     )
@@ -2831,7 +2831,7 @@
           (reference "U11") (unit 3)
         )
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U7") (unit 4)
+          (reference "U8") (unit 4)
         )
       )
     )
@@ -2865,7 +2865,7 @@
   (symbol (lib_id "74xx:74LS04") (at 80.01 102.87 0) (unit 4)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid fedb7aea-28ad-4311-968e-32c5de480fe9)
-    (property "Reference" "U8" (at 78.74 102.87 0)
+    (property "Reference" "U7" (at 78.74 102.87 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74AS04N" (at 80.01 97.79 0)
@@ -2900,7 +2900,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af"
-          (reference "U8") (unit 4)
+          (reference "U7") (unit 4)
         )
       )
     )

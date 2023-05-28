@@ -547,7 +547,7 @@
   (symbol (lib_id "Device:R_US") (at 104.14 34.29 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 07e4f8d3-e9bb-4146-9783-0e27e1ec9aa3)
-    (property "Reference" "R38" (at 106.68 33.655 0)
+    (property "Reference" "R25" (at 106.68 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 106.68 36.195 0)
@@ -564,7 +564,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R38") (unit 1)
+          (reference "R25") (unit 1)
         )
       )
     )
@@ -573,7 +573,7 @@
   (symbol (lib_id "Device:R_US") (at 87.63 34.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 1b5914a8-b6fd-4e63-807d-cf2d6bb94491)
-    (property "Reference" "R37" (at 85.09 33.655 0)
+    (property "Reference" "R24" (at 85.09 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 85.09 36.195 0)
@@ -590,7 +590,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R37") (unit 1)
+          (reference "R24") (unit 1)
         )
       )
     )
@@ -599,7 +599,7 @@
   (symbol (lib_id "Device:R_US") (at 118.11 34.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 23ed429c-ae6a-4aee-bc69-132989b0126c)
-    (property "Reference" "R39" (at 115.57 33.655 0)
+    (property "Reference" "R26" (at 115.57 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 115.57 36.195 0)
@@ -616,7 +616,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R39") (unit 1)
+          (reference "R26") (unit 1)
         )
       )
     )
@@ -625,7 +625,7 @@
   (symbol (lib_id "Device:R_US") (at 25.4 34.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 283a4b3c-30d3-42d5-b183-c3f646a290f1)
-    (property "Reference" "R33" (at 22.86 33.655 0)
+    (property "Reference" "R20" (at 22.86 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 22.86 36.195 0)
@@ -642,7 +642,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R33") (unit 1)
+          (reference "R20") (unit 1)
         )
       )
     )
@@ -678,7 +678,7 @@
   (symbol (lib_id "Device:R_US") (at 134.62 34.29 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8a2051eb-a5a6-41ee-acb6-7af206d34fa0)
-    (property "Reference" "R40" (at 137.16 33.655 0)
+    (property "Reference" "R27" (at 137.16 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 137.16 36.195 0)
@@ -695,7 +695,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R40") (unit 1)
+          (reference "R27") (unit 1)
         )
       )
     )
@@ -731,7 +731,7 @@
   (symbol (lib_id "Device:R_US") (at 73.66 34.29 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8ed47fa4-f925-4acb-9431-d429390efffa)
-    (property "Reference" "R36" (at 76.2 33.655 0)
+    (property "Reference" "R23" (at 76.2 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 76.2 36.195 0)
@@ -748,7 +748,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R36") (unit 1)
+          (reference "R23") (unit 1)
         )
       )
     )
@@ -811,7 +811,7 @@
   (symbol (lib_id "Device:R_US") (at 41.91 34.29 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d852b4c6-40ab-4e3a-98b9-4047f9504836)
-    (property "Reference" "R34" (at 44.45 33.655 0)
+    (property "Reference" "R21" (at 44.45 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 44.45 36.195 0)
@@ -828,7 +828,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R34") (unit 1)
+          (reference "R21") (unit 1)
         )
       )
     )
@@ -837,7 +837,7 @@
   (symbol (lib_id "Device:R_US") (at 57.15 34.29 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d9886b6b-3656-4226-834c-a30e7d0b4101)
-    (property "Reference" "R35" (at 54.61 33.655 0)
+    (property "Reference" "R22" (at 54.61 33.655 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Value" "10k" (at 54.61 36.195 0)
@@ -854,7 +854,7 @@
     (instances
       (project "rod6502"
         (path "/031ea57b-8d17-4b45-87cc-c58302485ce1/483a966f-eee8-4f33-a7bb-d1365211428b/0399b11a-1c30-4b2f-a517-0d2075a1b58d"
-          (reference "R35") (unit 1)
+          (reference "R22") (unit 1)
         )
       )
     )
