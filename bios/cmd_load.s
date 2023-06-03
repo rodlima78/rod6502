@@ -166,16 +166,12 @@ cmd_load:
     jsr load_errormsg
     .asciiz "o65 binary not supported"
 :
-    ; read segment info (tbase, tlen, dbase, dlen, bbase, blen, zbase, zlen, slen) ---
-    ldx #0
-@loop_seginfo:
-    jsr xmodem_get_byte
-    sta tbase,x
-    inx
-    cpx #18
-    bne @loop_seginfo
 
-    ; allocate memory for the segments
+    ; read tbase and tlen
+    lda #4
+    ldx #tbase
+    jsr read_into_zp_buffer
+    ; allocate memory for text segment
     ldx #dest_tbase
     ldy #tlen
     jsr sys_malloc
@@ -183,6 +179,12 @@ cmd_load:
     jsr load_errormsg
     .asciiz "error allocating memory for text segment"
 :   
+
+    ; read dbase and dlen
+    lda #4
+    ldx #dbase
+    jsr read_into_zp_buffer
+    ; allocate memory for data segment
     ldx #dest_dbase
     ldy #dlen
     jsr sys_malloc
@@ -190,6 +192,12 @@ cmd_load:
     jsr load_errormsg
     .asciiz "error allocating memory for data segment"
 :
+
+    ; read bbase and blen
+    lda #4
+    ldx #bbase
+    jsr read_into_zp_buffer
+    ; allocate memory for bss segment
     ldx #dest_bbase
     ldy #blen
     jsr sys_malloc
@@ -197,6 +205,11 @@ cmd_load:
     jsr load_errormsg
     .asciiz "error allocating memory for bss segment"
 :
+
+    ; read zbase, zlen, slen
+    lda #6
+    ldx #zbase
+    jsr read_into_zp_buffer
 
     ; read header options (ignore them)
 @read_header_option:
@@ -710,3 +723,20 @@ init_app_loader:
 
     rts
 
+; ===============================================
+
+; a: len
+; x: addr to zp buffer
+read_into_zp_buffer:
+    pha
+    phy
+    tay ; y = remaining bytes to read
+@loop:
+    jsr xmodem_get_byte
+    sta 0,x
+    inx
+    dey
+    bne @loop
+    ply
+    pla
+    rts
