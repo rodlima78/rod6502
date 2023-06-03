@@ -177,15 +177,7 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [
-      "lib_symbol_issues|1714500|1003300|db850a69-b76f-4523-b143-b406e85ca2c7|00000000-0000-0000-0000-000000000000|||",
-      "multiple_net_names|1016000|939800|6626c1b2-c5c9-4d54-aac5-ced96aa65598|2a5083dc-e06d-4118-8e74-d0188f921b41|||",
-      "multiple_net_names|673100|825500|9a5669fb-deb7-4bbf-9027-511af9bf0865|0a14ea5e-f8ec-4458-9ac8-718734170f15|||",
-      "pin_to_pin|1193800|698500|438611c0-e671-4f65-8cfe-18c2195c1827|d2a06ded-d38a-4380-871b-3c5ffcbf33aa|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|711200|1028700|6c3d1b67-239a-48c3-a93a-a9a0a29b0755|8d5ae387-498b-4e35-b4df-a44dfb7f35a9|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|863600|457200|88c65a0a-21a9-4d18-b081-5bab20fa709f|da84db08-bdd6-4174-8653-e04f86f5ad14|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||",
-      "pin_to_pin|939800|266700|f58aa4a0-5a3f-4690-9bbf-c113f306e2eb|45c4da0d-ce6e-467f-a6e6-005ec6a28261|/031ea57b-8d17-4b45-87cc-c58302485ce1/4032fa43-c28c-4c35-b0ce-d5d9da6e84af||"
-    ],
+    "erc_exclusions": [],
     "meta": {
       "version": 0
     },
@@ -612,10 +604,17 @@
       "/RAM0_~{CS}": "ctrl",
       "/RAM1_~{CS}": "ctrl",
       "/ROM_~{CS}": "ctrl",
+      "/VERA/A0": "address",
+      "/VERA/A1": "address",
+      "/VERA/A2": "address",
+      "/VERA/A3": "address",
+      "/VERA/A4": "address",
+      "/VERA/A[0..4]": "address",
       "/VERA/LevelConv4/LV": "vcc",
       "/VERA_~{CS}": "ctrl",
       "/VIA_~{CS}": "ctrl",
-      "/{ctrl}": "ctrl"
+      "/{ctrl}": "ctrl",
+      "Net-(U19-A8)": "irq"
     },
     "netclass_patterns": [
       {
@@ -624,7 +623,7 @@
       },
       {
         "netclass": "gnd",
-        "pattern": "Earth"
+        "pattern": "0"
       },
       {
         "netclass": "reset",
