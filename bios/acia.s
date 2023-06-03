@@ -270,9 +270,10 @@ tx_interrupt_handler:
     pha
     lda timeout_state
     beq @timed_out ; 0 ? timeout
-    dec timeout_state
+    dea
+    sta timeout_state
     beq @timed_out ; 0 ? timeout
-    cmp #3         ; 3 <= state (before decrement) ?
+    cmp #2         ; 2 <= state?
     bcs @wait_64k  ; yes, wait 64k cycles
 
     stz VIA_T2CL   ; no, wait for 22528 cycles ($5800)
