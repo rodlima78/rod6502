@@ -6,6 +6,8 @@
 
 .importzp app_loaded
 
+.feature string_escapes
+
 SOH = $01
 EOT = $04
 ACK = $06
@@ -99,6 +101,21 @@ start_block:
 
     rts
 
+end_block:
+    lda #1            ; 1s timeout
+    jsr io_get_byte ; yes, get checksum
+    bcs xmodem_error
+    cmp checksum
+    bne xmodem_error
+
+    ; acknowledge that we have received the block
+    lda #ACK
+    jsr io_put_byte
+
+    inc next_block
+
+    jmp start_block
+
 xmodem_error:
     lda retries         ; still more retries?
     beq @bail           ; no, give up
@@ -118,7 +135,7 @@ xmodem_error:
     jsr acia_purge
 
     jsr io_put_const_string
-    .asciiz " FAILED"
+    .asciiz "FAILED\r\nToo many retries"
 
     ; indicate transfer has finished
     lda #$ff
@@ -130,20 +147,6 @@ xmodem_error:
     lda #1  ; signal error
     jmp (fnerror)
 
-end_block:
-    lda #1            ; 1s timeout
-    jsr io_get_byte ; yes, get checksum
-    bcs xmodem_error
-    cmp checksum
-    bne xmodem_error
-
-    ; acknowledge that we have received the block
-    lda #ACK
-    jsr io_put_byte
-
-    inc next_block
-
-    jmp start_block
 
 ; return a: byte read
 xmodem_get_byte:
