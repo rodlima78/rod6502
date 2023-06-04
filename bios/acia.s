@@ -1,7 +1,6 @@
 .include "acia.inc"
 .include "via.inc"
 .include "irq.inc"
-.include "lcd.inc"
 .include "io.inc"
 
 .import default_irq_handler
@@ -34,6 +33,19 @@ DATABIT_7 = %00100000
 DATABIT_6 = %01000000
 DATABIT_5 = %01100000
 
+; must be a power of two
+RDBUFSIZE = 8
+
+.data
+; circular buffer for read data
+read_buffer: .res RDBUFSIZE
+; index of where new bytes will be written to
+buffer_put: .res 1
+; index of next byte to be read from
+; if $FF, read_buffer[0] has the error state
+buffer_get: .res 1
+
+.code
 acia_start:
     pha
 
@@ -43,7 +55,6 @@ acia_start:
     pla             ; yes, early return
     rts
 @must_setup:
-
     ; PB6 is input
     lda #$40
     trb VIA_DIR_B
@@ -51,12 +62,6 @@ acia_start:
     ; enable interrupts on timer2
     lda #((1<<5) | $80)
     sta VIA_IER
-
-    ; set our rx irq handler to IRQ0 (linked to ACIA)
-    lda #<rx_interrupt_handler
-    sta irq_table+0*2+0
-    lda #>rx_interrupt_handler
-    sta irq_table+0*2+1
 
     ; set our tx irq handler to IRQ1 (linked to VIA)
     lda #<tx_interrupt_handler
@@ -76,6 +81,12 @@ acia_start:
     lda #(BAUDS_9600 | DATABIT_8 | STOPBIT_1)
     sta ACIA_CTRL
 
+    ; special handler while we wait for carrier
+    lda #<rx_interrupt_handler_wait_carrier
+    sta irq_table+0*2+0
+    lda #>rx_interrupt_handler_wait_carrier
+    sta irq_table+0*2+1
+
     ; data terminal ready (b0==1)
     ; recv irq enabled (b1==0)
     ; ready to send yes  (b2-3 == %10)
@@ -91,15 +102,29 @@ acia_start:
     bit ACIA_STATUS
     bne @loop_wait_ready
 
-    ; disable acia interrupts
-    lda #%10
-    tsb ACIA_CMD
+    sei ; disable interrupts (our "mutex")
+
+    ; reset circular read buffer
+    stz buffer_put
+    stz buffer_get
+
+    ; set our rx irq handler to IRQ0 (linked to ACIA)
+    lda #<rx_interrupt_handler
+    sta irq_table+0*2+0
+    lda #>rx_interrupt_handler
+    sta irq_table+0*2+1
+
+    cli ; enable interrupts
 
     pla
     rts
 
 acia_stop:
     pha
+
+    ; disable acia interrupts
+    lda #%10
+    tsb ACIA_CMD
 
     ; b0->0: data terminal not ready
     lda #1
@@ -173,11 +198,46 @@ timeout_state: .res 1
 acia_get_byte_timeout:
     ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
     phx
+    phy
+    tay ; y now holds how many seconds to wait
 
-    tax ; X now holds how many seconds to wait
+@read_data:
+    sei ; disable interrupts
+    ; buffer in error state?
+    ldx buffer_get
+    bmi @buffer_error
+    ; if read_buffer is empty (get == put)
+    cpx buffer_put
+    beq @buffer_empty       ; yes, wait for more data
+    lda read_buffer,x       ; no, return data from it
 
-    cpx #0
-    beq @no_timeout
+    ; increment get pointer, modulo RDBUFSIZE
+    pha
+    inx
+    txa
+    and #(RDBUFSIZE-1)
+    sta buffer_get
+    pla
+
+    cli ; enable interrupts
+
+    clc
+    bra @end
+
+@buffer_error:
+    ; reset circular buffer
+    stz buffer_get
+    stz buffer_put
+    lda read_buffer   ; get error status
+    cli
+    sec     ; indicate error
+    bra @end
+
+@buffer_empty:
+    cli
+    stz timeout_state
+    cpy #0      ; no timeout?
+    beq @wait   ; go straight to wait for more data to come
 
     lda #%00100000 ; Timer2 count down pulses on PB6
     sta VIA_ACR
@@ -186,58 +246,34 @@ acia_get_byte_timeout:
     lda #3
     sta timeout_state
 
-    lda #255
+    lda #255     ; wait for 64k cycles
     sta VIA_T2CL
     sta VIA_T2CH ; start counter
-    bra @enable_acia_interrupt
-
-@no_timeout:
-    stz timeout_state
-
-@enable_acia_interrupt:
-    lda #%10  ; enable receiver interrupt request
-    trb ACIA_CMD
-
-@wait_more:
-    wai
-    cpx #0              ; doesn't have timeout?
-    beq @ignore_timeout ; yes, ignore it
-    lda timeout_state   ; no, timeout_state==0?
-    beq @timed_out      ; yes, signal timeout
-@ignore_timeout:
-    lda ACIA_STATUS
-    bit #%1111 ; receiver data register full or any error?
-    beq @wait_more   ; no? wait a bit more
-    and #.lobyte(~%1000) ; signal no timeout (we don't need data register full info anymore)
-    bra @check_errors
-
-@timed_out:
-    dex
+@wait:
+    wai                 ; wait for some interrupt to happen (rx or timer)
+    cpy #0              ; does it have timeout?
+    beq @read_data      ; no, read byte
+    lda timeout_state   ; yes. timeout_state==0?
+    bne @got_data       ; no, read byte
+    dey                 ; yes, one less second to wait
     bne @wait_one_second
-    lda ACIA_STATUS
-    ora #%1000 ; bit3=1 -> timeout
-
-@check_errors:
-    ; test for Timeout (bit3==1)
-    ;          Overrun (bit2==1)
-    ;          Frame error (bit1==1)
-    ;          Parity error (bit0==1)
-    and #%00001111
-    pha          ; push status
-    clc
-    adc #$FF      ; if A==0, C==0 or in case of errors, C==1
+    
+    ; timeout!
+    lda #%1000 ; bit3=1 -> timeout
+    stz VIA_ACR   ; disable Timer2 pulse counter
+    sec
+    bra @end
+@got_data:
+    sei
+    ldx buffer_get
+    cpx buffer_put
+    cli
+    beq @wait
 
     stz VIA_ACR   ; disable Timer2 pulse counter
-
-    lda #%10 ; disable receiver interrupt request
-    tsb ACIA_CMD
-
-    lda ACIA_DATA ; read data even in case of errors, to reset recv error bits
-
-    plx         ; pop status
-    bcc @noerror
-    txa         ; in case of errors return status instead
-@noerror:
+    bra @read_data
+@end:
+    ply
     plx         ; pop caller's x
     rts
 
@@ -249,7 +285,7 @@ acia_get_byte:
 ; input: A -> character to be written out
 acia_put_byte:
     sta ACIA_DATA
-    stz timeout_state ; so that interrupt handler won't using it
+    stz timeout_state ; so that interrupt handler skips timer handling
     pha
 
     ; generate interrupt after 10 bits (1+8+1) are output (PB6 is bauds*16)
@@ -294,7 +330,39 @@ tx_interrupt_handler:
     plx ; was pushed in main handler, time to pop it out
     rti
 
+rx_interrupt_handler_wait_carrier:
+    lda ACIA_STATUS ; clear up acia interrupt flag
+    plx ; was pushed in main handler, time to pop it out
+    rti
+
 rx_interrupt_handler:
-    ldx ACIA_STATUS ; clear up acia interrupt flag
+    pha
+
+    lda ACIA_STATUS ; clear up acia interrupt flag
+    ; test for Overrun (bit2==1)
+    ;          Frame error (bit1==1)
+    ;          Parity error (bit0==1)
+    bit #%0111
+    bne @error
+    bit #%1000      ; data arrived?
+    beq @end        ; no, do nothing
+    lda ACIA_DATA
+    ldx buffer_put
+    sta read_buffer,x
+    ; increment put index, modulo RDBUFSIZE
+    inx
+    txa
+    and #(RDBUFSIZE-1)
+    sta buffer_put
+    cmp buffer_get
+    bne @end
+    lda #%100           ; buffer overrun
+@error:
+    ldx ACIA_DATA       ; clear input and ignore it
+    sta read_buffer     ; write status to read_buffer[0]
+    lda #$ff        
+    sta buffer_get      ; indicate error
+@end:
+    pla
     plx ; was pushed in main handler, time to pop it out
     rti
