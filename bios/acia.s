@@ -78,7 +78,7 @@ acia_start:
     lda #0
     sta ACIA_STATUS
 
-    lda #(BAUDS_9600 | DATABIT_8 | STOPBIT_1)
+    lda #(BAUDS_115k2 | DATABIT_8 | STOPBIT_1)
     sta ACIA_CTRL
 
     ; special handler while we wait for carrier
@@ -185,9 +185,15 @@ acia_purge:
     rts
 
 .zeropage
+; For 9600
 ; 3: need to wait / waiting 64k cycles
 ; 2: waiting 64k cycles 
 ; 1: waiting 22528 cycles
+; 0: timed out!
+; For 115200
+; 29: need to wait / waiting 64k cycles
+; 28->2: waiting 27*64k cycles 
+; 1: waiting 8192 cycles
 ; 0: timed out!
 timeout_state: .res 1
 
@@ -197,6 +203,7 @@ timeout_state: .res 1
 ; C==1 in case of errors
 acia_get_byte_timeout:
     ; for 9600 bauds, 1 second wait == 65536*2 + 22528 ($5800) bauds*16 pulses
+    ; for 115200 bauds, 1 second wait == 65536*28 + 8192 ($2000) bauds*16 pulses
     phx
     phy
     tay ; y now holds how many seconds to wait
@@ -243,7 +250,7 @@ acia_get_byte_timeout:
     sta VIA_ACR
 
 @wait_one_second:
-    lda #3
+    lda #29
     sta timeout_state
 
     lda #255     ; wait for 64k cycles
@@ -312,8 +319,8 @@ tx_interrupt_handler:
     cmp #2         ; 2 <= state?
     bcs @wait_64k  ; yes, wait 64k cycles
 
-    stz VIA_T2CL   ; no, wait for 22528 cycles ($5800)
-    lda #$58
+    stz VIA_T2CL   ; no, wait for (9600 Bd) $5800 or (115200 Bd) $2000 cycles
+    lda #$20
     sta VIA_T2CH ; start counter
     bra @end
 @wait_64k:
